@@ -1,0 +1,13 @@
+[workspace]
+resolver = "2"
+members = [
+   "evo_main",      # Watchdog & Process Manager
+   "evo_common",    # Shared types and definitions
+   "evo_shm",       # Shared Memory Library
+   "evo_api",       # API Liaison (later)
+]
+
+[profile.release]
+lto = true
+opt-level = 3
+panic = "abort"

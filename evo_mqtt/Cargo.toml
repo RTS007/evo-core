@@ -1,5 +1,5 @@
 [package]
-name = "evo_main"
+name = "evo_mqtt"
 version = "0.1.0"
 edition = "2024"
 

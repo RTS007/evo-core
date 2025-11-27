@@ -1,10 +1,16 @@
 [workspace]
 resolver = "2"
 members = [
-   "evo_main",      # Watchdog & Process Manager
-   "evo_common",    # Shared types and definitions
-   "evo_shm",       # Shared Memory Library
-   "evo_api",       # API Liaison (later)
+   "evo",                  # Watchdog & Process Manager
+   "evo_common",           # Shared types and definitions
+   "evo_api",              # EVO API
+   "evo_dashboard",        # GUI
+   "evo_grpc",             # API Liaison: gRPC
+   "evo_mqtt",             # API Liaison: MQTT
+   "evo_recipe_executor",  # Recipe executor
+   "evo_control_unit",     # Control unit
+   "evo_hal_core",         # HAL Core
+   "evo_diagnostic",       # Diagnostic
 ]
 
 [profile.release]

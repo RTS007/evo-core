@@ -3,6 +3,10 @@
 version = 4
 
 [[package]]
+name = "evo"
+version = "0.1.0"
+
+[[package]]
 name = "evo_api"
 version = "0.1.0"
 
@@ -11,9 +15,29 @@ name = "evo_common"
 version = "0.1.0"
 
 [[package]]
-name = "evo_main"
+name = "evo_control_unit"
 version = "0.1.0"
 
 [[package]]
-name = "evo_shm"
+name = "evo_dashboard"
+version = "0.1.0"
+
+[[package]]
+name = "evo_diagnostic"
+version = "0.1.0"
+
+[[package]]
+name = "evo_grpc"
+version = "0.1.0"
+
+[[package]]
+name = "evo_hal_core"
+version = "0.1.0"
+
+[[package]]
+name = "evo_mqtt"
+version = "0.1.0"
+
+[[package]]
+name = "evo_recipe_executor"
 version = "0.1.0"

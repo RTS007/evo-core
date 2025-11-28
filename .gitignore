@@ -22,3 +22,11 @@ target
 
 # VS Code
 **/.vscode/
+
+# GitHub
+**/.github/agents/
+**/.github/prompts/
+
+# Specify
+**/.specify/scripts/
+**/.specify/templates/

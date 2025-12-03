@@ -50,7 +50,7 @@ fn serialize_data<T: Serialize>(data: &T) -> Result<Vec<u8>, Box<dyn std::error:
 fn deserialize_data<'a, T: Deserialize<'a>>(
     data: &'a [u8],
 ) -> Result<T, Box<dyn std::error::Error>> {
-    // ZMIANA: Używamy iteratora, który bierze pierwszy poprawny obiekt i ignoruje resztę
+    // CHANGE: We use iterator that takes the first valid object and ignores the rest
     let mut stream = serde_json::Deserializer::from_slice(data).into_iter::<T>();
     match stream.next() {
         Some(result) => Ok(result?),

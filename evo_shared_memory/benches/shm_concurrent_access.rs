@@ -49,9 +49,9 @@ fn bench_concurrent_readers(c: &mut Criterion) {
 fn bench_reader_write_contention(c: &mut Criterion) {
     c.bench_function("reader_under_write_pressure", |b| {
         b.iter(|| {
-            // Używamy dwóch barier:
-            // 1. "Ready to start" - Pisarz stworzył segment
-            // 2. "Go" - Wszyscy gotowi do pracy
+            // We use two barriers:
+            // 1. "Ready to start" - Writer created segment
+            // 2. "Go" - Everyone ready to work
             let barrier_created = Arc::new(Barrier::new(2));
             let barrier_start = Arc::new(Barrier::new(2));
 
@@ -66,19 +66,19 @@ fn bench_reader_write_contention(c: &mut Criterion) {
                 let segment_name = "bench_contention_w";
                 let full_path = "/dev/shm/evo_bench_contention_w";
 
-                // NAPRAWA: Pętla Retry.
-                // System operacyjny może mieć opóźnienie w zwalnianiu pliku.
-                // Próbujemy do skutku.
+                // FIX: Retry loop.
+                // Operating system may have delay in releasing the file.
+                // We try until success.
                 let mut local_writer = loop {
-                    // 1. Próbujemy usunąć (ignorujemy błąd, jeśli pliku nie ma)
+                    // 1. Try to remove (ignore error if file doesn't exist)
                     let _ = std::fs::remove_file(full_path);
 
-                    // 2. Próbujemy utworzyć
+                    // 2. Try to create
                     match SegmentWriter::create(segment_name, 65536) {
-                        Ok(w) => break w, // Udało się! Wychodzimy z pętli.
+                        Ok(w) => break w, // Success! Exit the loop.
                         Err(_) => {
-                            // Plik nadal istnieje lub jest zablokowany.
-                            // Czekamy 10 mikrosekund i próbujemy znowu.
+                            // File still exists or is locked.
+                            // Wait 10 microseconds and try again.
                             thread::sleep(std::time::Duration::from_micros(10));
                         }
                     }
@@ -86,10 +86,10 @@ fn bench_reader_write_contention(c: &mut Criterion) {
 
                 let local_data = vec![0xAAu8; 512];
 
-                // 2. Sygnalizujemy: "Stworzyłem!"
+                // 2. Signal: "Created!"
                 bc_writer.wait();
 
-                // 3. Czekamy na start testu
+                // 3. Wait for test start
                 bs_writer.wait();
 
                 // Write continuously
@@ -101,11 +101,11 @@ fn bench_reader_write_contention(c: &mut Criterion) {
 
             // Reader thread
             let reader_handle = thread::spawn(move || {
-                // 1. Czekamy aż Pisarz stworzy segment
+                // 1. Wait until Writer creates segment
                 bc_reader.wait();
 
-                // 2. Teraz bezpiecznie się podłączamy
-                // Dodajemy małą pętlę retry, bo system plików może mieć mikrosekundowe opóźnienie
+                // 2. Now safely connect
+                // Add small retry loop, as filesystem may have microsecond delay
                 let mut reader = loop {
                     match SegmentReader::attach("bench_contention_w") {
                         Ok(r) => break r,

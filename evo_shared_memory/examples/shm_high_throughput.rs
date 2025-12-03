@@ -221,13 +221,13 @@ fn high_speed_consumer(
         if reader.has_changed() {
             match reader.read() {
                 Ok(data_bytes) => {
-                    // STARY KOD (powoduje błąd):
+                    // OLD CODE (causes error):
                     /*
                     let market_data: MarketData = serde_json::from_slice(data_bytes)
                         .map_err(|e| ShmError::Io { source: std::io::Error::new(std::io::ErrorKind::InvalidData, e) })?;
                     */
 
-                    // NOWY KOD (ignoruje śmieci):
+                    // NEW CODE (ignores garbage):
                     let mut stream =
                         serde_json::Deserializer::from_slice(data_bytes).into_iter::<MarketData>();
                     let market_data = match stream.next() {

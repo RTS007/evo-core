@@ -1,7 +1,7 @@
 # Feature Specification: Shared Memory Lifecycle
 
 **Feature Branch**: `002-shm-lifecycle`  
-**Created**: 28 listopada 2025  
+**Created**: 28 November 2025  
 **Status**: Draft  
 **Input**: User description: "Shared Memory lifecycle (single-writer segments, lock-free reads)"
 

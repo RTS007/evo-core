@@ -63,9 +63,9 @@ fn serialize_data<T: Serialize>(data: &T) -> Result<Vec<u8>, Box<dyn std::error:
 fn deserialize_data<'a, T: Deserialize<'a>>(
     data: &'a [u8],
 ) -> Result<T, Box<dyn std::error::Error>> {
-    // Tworzymy deserializer strumieniowy.
-    // On przeczyta jeden poprawny obiekt JSON i zatrzyma się,
-    // ignorując cokolwiek (zera, śmieci, stare dane), co jest dalej.
+    // Create streaming deserializer.
+    // It will read one valid JSON object and stop,
+    // ignoring anything (zeros, garbage, old data) that comes after.
     let mut stream = serde_json::Deserializer::from_slice(data).into_iter::<T>();
 
     match stream.next() {

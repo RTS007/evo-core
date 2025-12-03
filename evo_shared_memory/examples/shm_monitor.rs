@@ -5,33 +5,33 @@ use std::{thread, time::Duration};
 fn main() -> ShmResult<()> {
     println!("EVO System Radar - Waiting for new devices...");
 
-    // Zbiór znanych urządzeń (nazw)
+    // Set of known devices (names)
     let mut known_devices = HashSet::new();
 
-    // Tworzymy instancję discovery
+    // Create discovery instance
     let discovery = SegmentDiscovery::new();
 
-    // Wstępne skanowanie
-    // Używamy metody list_segments()
+    // Initial scanning
+    // Use list_segments() method
     for info in discovery.list_segments()? {
         known_devices.insert(info.name);
     }
     println!("Initial state: {} devices connected.", known_devices.len());
 
-    // Pętla monitorująca
+    // Monitoring loop
     loop {
-        // Pobieramy aktualną listę segmentów
+        // Get current segment list
         let current_segments = discovery.list_segments()?;
 
-        // Zamieniamy listę struktur SegmentInfo na zbiór nazw (String)
+        // Convert list of SegmentInfo structs to set of names (String)
         let current_set: HashSet<String> =
             current_segments.into_iter().map(|info| info.name).collect();
 
-        // Sprawdź nowe
+        // Check for new devices
         for device in current_set.difference(&known_devices) {
             println!(">>> NEW DEVICE DETECTED: [{}]", device);
 
-            // Możemy pobrać szczegóły nowego urządzenia
+            // We can get details of the new device
             if let Ok(Some(info)) = discovery.find_segment(device) {
                 println!(
                     "    Details: Size={} bytes, PID={}",
@@ -40,7 +40,7 @@ fn main() -> ShmResult<()> {
             }
         }
 
-        // Sprawdź odłączone
+        // Check for disconnected devices
         for device in known_devices.difference(&current_set) {
             println!("<<< DEVICE LOST: [{}]", device);
         }

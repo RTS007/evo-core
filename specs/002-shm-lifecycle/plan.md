@@ -1,6 +1,6 @@
 # Implementation Plan: Shared Memory Lifecycle
 
-**Branch**: `002-shm-lifecycle` | **Date**: 28 listopada 2025 | **Spec**: [spec.md](./spec.md)
+**Branch**: `002-shm-lifecycle` | **Date**: 28 November 2025 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/002-shm-lifecycle/spec.md`
 
 **Note**: This plan implements the shared memory lifecycle with single-writer segments and lock-free reads for the EVO real-time industrial control system.

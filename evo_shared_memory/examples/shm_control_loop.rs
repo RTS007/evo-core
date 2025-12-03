@@ -40,14 +40,14 @@ fn serialize_data<T: Serialize>(data: &T) -> Result<Vec<u8>, Box<dyn std::error:
 fn deserialize_data<'a, T: Deserialize<'a>>(
     data: &'a [u8],
 ) -> Result<T, Box<dyn std::error::Error>> {
-    // Tworzymy deserializer strumieniowy.
-    // On przeczyta jeden poprawny obiekt JSON i zatrzyma się,
-    // ignorując cokolwiek (zera, śmieci, stare dane), co jest dalej.
+    // Create streaming deserializer.
+    // It will read one valid JSON object and stop,
+    // ignoring anything (zeros, garbage, old data) that comes after.
     let mut stream = serde_json::Deserializer::from_slice(data).into_iter::<T>();
 
     match stream.next() {
         Some(result) => Ok(result?),
-        None => Err("Nie znaleziono poprawnego JSON-a w buforze".into()),
+        None => Err("No valid JSON found in buffer".into()),
     }
 }
 
@@ -424,7 +424,7 @@ fn process_simulation() -> ShmResult<()> {
 
     let start_time = Instant::now();
     let mut last_printed_sequence = 0;
-    // Dodajemy flagę, żeby zawsze wypisać pierwszy odebrany pakiet
+    // Add flag to always print the first received packet
     let mut first_packet_received = false;
 
     loop {
@@ -433,8 +433,8 @@ fn process_simulation() -> ShmResult<()> {
                 Ok(bytes) => {
                     match deserialize_data::<ProcessFeedback>(&bytes) {
                         Ok(feedback) => {
-                            // ZAWSZE wypisz pierwszy pakiet, żeby potwierdzić komunikację
-                            // LUB wypisz co 500 cykli (zmniejszyłem z 1000 dla pewności)
+                            // ALWAYS print first packet to confirm communication
+                            // OR print every 500 cycles (reduced from 1000 for safety)
                             if !first_packet_received
                                 || feedback.sequence_id >= last_printed_sequence + 500
                             {
@@ -451,7 +451,7 @@ fn process_simulation() -> ShmResult<()> {
                             }
                         }
                         Err(e) => {
-                            // WAŻNE: Nie połykaj błędów!
+                            // IMPORTANT: Don't swallow errors!
                             eprintln!("Process: Deserialization error: {}", e);
                         }
                     }
@@ -461,8 +461,8 @@ fn process_simulation() -> ShmResult<()> {
                 }
             }
         } else {
-            // Opcjonalnie: krótki sleep, żeby nie palić CPU w pętli while(true)
-            // jeśli biblioteka nie blokuje
+            // Optional: short sleep to avoid burning CPU in while(true) loop
+            // if library doesn't block
             thread::sleep(Duration::from_millis(1));
         }
 
@@ -470,8 +470,8 @@ fn process_simulation() -> ShmResult<()> {
             break;
         }
 
-        // Usuwamy długi sleep 10ms, który mógł powodować gubienie rytmu
-        // Zamiast tego polegamy na has_changed() i krótkim sleepie powyżej
+        // Remove long sleep 10ms, which could cause rhythm loss
+        // Instead we rely on has_changed() and short sleep above
     }
 
     println!("Process simulation finished");

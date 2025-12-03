@@ -5,7 +5,7 @@ A concise, near-term plan for the open-source core, progressing from first found
 ## Phase 1: Foundations
 Goal: Establish minimal runtime and communication.
 
-- [ ] Shared Memory lifecycle (single-writer segments, lock-free reads)
+- [X] Shared Memory lifecycle (single-writer segments, lock-free reads)
 - [ ] Minimal IPC (events + state exchange)
 - [ ] Basic API Liaison (gRPC) for commands
 - [ ] Watchdog for process supervision

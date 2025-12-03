@@ -1,0 +1,300 @@
+# EVO Shared Memory CI/CD Integration
+#
+# GitHub Actions workflow for automated performance regression detection
+
+name: Performance Regression Detection
+
+on:
+  push:
+    branches: [ main, develop, 'feature/*-performance' ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run nightly at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  BENCHMARK_DURATION: 10  # Shorter duration for CI
+  BENCHMARK_THREADS: 2
+
+jobs:
+  performance-regression:
+    name: Performance Regression Detection
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        # Fetch enough history for performance comparisons
+        fetch-depth: 100
+
+    - name: Setup Rust Toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        components: rustfmt, clippy
+        override: true
+
+    - name: Cache Rust Dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          pkg-config \
+          libc6-dev \
+          jq \
+          bc \
+          coreutils
+        
+        # Increase shared memory limits for testing
+        sudo sysctl -w kernel.shmmax=1073741824  # 1GB
+        sudo sysctl -w kernel.shmall=262144      # 1GB in pages
+
+    - name: Setup Performance Testing Environment
+      run: |
+        # Create necessary directories
+        mkdir -p .ci/performance_baselines
+        mkdir -p target/benchmark_results
+        mkdir -p target/regression_reports
+        
+        # Set environment for reproducible benchmarks
+        echo "RUST_LOG=info" >> $GITHUB_ENV
+        echo "CI=true" >> $GITHUB_ENV
+        
+        # Display system info for debugging
+        echo "=== System Information ==="
+        nproc
+        free -h
+        uname -a
+        cat /proc/meminfo | grep -E "(MemTotal|MemAvailable)"
+
+    - name: Build Project
+      run: |
+        echo "Building EVO shared memory system..."
+        cargo build --release --all-targets
+        
+        echo "Building benchmarks..."
+        cargo build --release --examples
+
+    - name: Download Previous Baselines
+      if: github.event_name != 'schedule'
+      continue-on-error: true
+      run: |
+        # Try to download baselines from main branch artifact
+        echo "Attempting to download previous performance baselines..."
+        
+        # This would typically download from a previous successful run
+        # For now, we'll create minimal baselines if they don't exist
+        if [ ! -f ".ci/performance_baselines/basic_usage.json" ]; then
+          echo "No existing baselines found - this run will establish new baselines"
+        fi
+
+    - name: Run Performance Benchmarks
+      id: benchmarks
+      run: |
+        echo "Running performance regression detection..."
+        
+        # Set strict error handling
+        set -euo pipefail
+        
+        # Run the regression detection script
+        if ./.ci/performance_regression_detection.sh --verbose; then
+          echo "benchmark_status=success" >> $GITHUB_OUTPUT
+        else
+          echo "benchmark_status=failure" >> $GITHUB_OUTPUT
+          exit 1
+        fi
+
+    - name: Upload Benchmark Results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: benchmark-results-${{ github.run_id }}
+        path: |
+          target/benchmark_results/
+          target/regression_reports/
+        retention-days: 30
+
+    - name: Update Performance Baselines
+      if: |
+        github.ref == 'refs/heads/main' && 
+        steps.benchmarks.outputs.benchmark_status == 'success'
+      run: |
+        echo "Updating performance baselines for main branch..."
+        ./.ci/performance_regression_detection.sh --update-baseline
+
+    - name: Upload Updated Baselines
+      if: |
+        github.ref == 'refs/heads/main' && 
+        steps.benchmarks.outputs.benchmark_status == 'success'
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-baselines-${{ github.sha }}
+        path: .ci/performance_baselines/
+        retention-days: 90
+
+    - name: Generate Performance Report
+      if: always()
+      run: |
+        echo "Generating performance report for GitHub..."
+        
+        # Create markdown report for GitHub
+        report_file="performance_report.md"
+        
+        echo "# 🚀 EVO Shared Memory Performance Report" > $report_file
+        echo "" >> $report_file
+        echo "**Commit:** \`${{ github.sha }}\`" >> $report_file
+        echo "**Branch:** \`${{ github.ref_name }}\`" >> $report_file
+        echo "**Timestamp:** $(date -u)" >> $report_file
+        echo "" >> $report_file
+        
+        # Check if we have regression results
+        if [ -f "target/regression_reports/latest" ]; then
+          latest_report_dir=$(cat "target/regression_reports/latest")
+          summary_file="$latest_report_dir/summary.json"
+          
+          if [ -f "$summary_file" ]; then
+            overall_status=$(jq -r '.overall_status' "$summary_file")
+            total_benchmarks=$(jq -r '.total_benchmarks' "$summary_file")
+            regressions=$(jq -r '.regressions_detected' "$summary_file")
+            
+            echo "## 📊 Summary" >> $report_file
+            echo "" >> $report_file
+            echo "| Metric | Value |" >> $report_file
+            echo "|--------|-------|" >> $report_file
+            echo "| Overall Status | $overall_status |" >> $report_file
+            echo "| Benchmarks Run | $total_benchmarks |" >> $report_file
+            echo "| Regressions | $regressions |" >> $report_file
+            echo "" >> $report_file
+            
+            if [ "$regressions" -gt 0 ]; then
+              echo "## ⚠️ Regressions Detected" >> $report_file
+              echo "" >> $report_file
+              
+              # Add details about regressions
+              for report_file_path in "$latest_report_dir"/*.json; do
+                [ -f "$report_file_path" ] || continue
+                [ "$(basename "$report_file_path")" != "summary.json" ] || continue
+                
+                status=$(jq -r '.overall_status' "$report_file_path")
+                if [ "$status" == "FAIL" ]; then
+                  benchmark=$(jq -r '.benchmark' "$report_file_path")
+                  echo "### $benchmark" >> $report_file
+                  echo "" >> $report_file
+                  echo "| Metric | Change | Status |" >> $report_file
+                  echo "|--------|--------|--------|" >> $report_file
+                  
+                  for metric in latency_avg latency_p99 throughput jitter memory; do
+                    metric_status=$(jq -r ".metrics.${metric}.status" "$report_file_path")
+                    if [ "$metric_status" == "REGRESSION" ]; then
+                      change=$(jq -r ".metrics.${metric}.change_percent" "$report_file_path")
+                      echo "| $metric | ${change}% | ❌ $metric_status |" >> $report_file
+                    fi
+                  done
+                  echo "" >> $report_file
+                fi
+              done
+            else
+              echo "## ✅ No Regressions" >> $report_file
+              echo "" >> $report_file
+              echo "All performance benchmarks passed within acceptable thresholds." >> $report_file
+            fi
+          fi
+        else
+          echo "## ℹ️ No Regression Analysis" >> $report_file
+          echo "" >> $report_file
+          echo "No baseline comparison available - this may be establishing new baselines." >> $report_file
+        fi
+        
+        echo "" >> $report_file
+        echo "---" >> $report_file
+        echo "*Generated by EVO Shared Memory CI/CD Pipeline*" >> $report_file
+
+    - name: Comment Performance Report on PR
+      if: |
+        github.event_name == 'pull_request' && 
+        always()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          
+          if (fs.existsSync('performance_report.md')) {
+            const report = fs.readFileSync('performance_report.md', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
+          }
+
+    - name: Fail on Performance Regression
+      if: steps.benchmarks.outputs.benchmark_status == 'failure'
+      run: |
+        echo "❌ Performance regression detected!"
+        echo "Check the performance report for details."
+        exit 1
+
+  # Separate job for scheduled baseline updates
+  update-baselines:
+    name: Update Performance Baselines
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    timeout-minutes: 45
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Rust Toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential pkg-config libc6-dev jq bc
+        sudo sysctl -w kernel.shmmax=1073741824
+        sudo sysctl -w kernel.shmall=262144
+
+    - name: Build and Run Extended Benchmarks
+      run: |
+        export BENCHMARK_DURATION=60  # Longer duration for baseline
+        export BENCHMARK_THREADS=4
+        
+        cargo build --release --examples
+        ./.ci/performance_regression_detection.sh --benchmark-only
+
+    - name: Update Baselines
+      run: |
+        ./.ci/performance_regression_detection.sh --update-baseline
+
+    - name: Upload New Baselines
+      uses: actions/upload-artifact@v3
+      with:
+        name: nightly-baselines-${{ github.sha }}
+        path: .ci/performance_baselines/
+        retention-days: 180

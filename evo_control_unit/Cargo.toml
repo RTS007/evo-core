@@ -4,3 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+evo_shared_memory = { path = "../evo_shared_memory" }
+serde = { version = "1.0.190", features = ["derive"] }
+serde_json = "1.0.108"
+tracing = "0.1.40"
+tracing-subscriber = "0.3.22"
+parking_lot = "0.12"

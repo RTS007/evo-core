@@ -11,6 +11,7 @@ members = [
    "evo_control_unit",     # Control unit
    "evo_hal_core",         # HAL Core
    "evo_diagnostic",       # Diagnostic
+   "evo_shared_memory",    # Shared memory lifecycle management
 ]
 
 [profile.release]

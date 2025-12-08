@@ -59,7 +59,8 @@
 //! ### Basic Producer-Consumer
 //!
 //! ```rust
-//! use evo_shared_memory::{SegmentWriter, SegmentReader, SHM_MIN_SIZE};
+//! use evo_shared_memory::{SegmentWriter, SegmentReader};
+//! use evo::shm::consts::SHM_MIN_SIZE;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! // Producer
@@ -104,7 +105,8 @@
 //! ### Efficient Reading
 //!
 //! ```rust
-//! use evo_shared_memory::{SegmentReader, SegmentWriter, SHM_MIN_SIZE};
+//! use evo_shared_memory::{SegmentReader, SegmentWriter};
+//! use evo::shm::consts::SHM_MIN_SIZE;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! // Setup
@@ -127,7 +129,8 @@
 //! ### EVO Control Unit Integration
 //!
 //! ```rust,no_run
-//! use evo_shared_memory::{SegmentWriter, ShmError, SHM_MIN_SIZE};
+//! use evo_shared_memory::{SegmentWriter, ShmError};
+//! use evo::shm::consts::SHM_MIN_SIZE;
 //!
 //! struct ControlUnit {
 //!     command_writer: SegmentWriter,
@@ -245,7 +248,7 @@ pub use error::{ShmError, ShmResult};
 pub use lifecycle::{SegmentCleanup, SegmentMetadata, ShmLifecycleManager};
 pub use monitoring::{Alert, AlertHandler, ConsoleAlertHandler, MemoryMonitor, MonitoringConfig};
 pub use reader::SegmentReader;
-pub use segment::{SHM_MAX_SIZE, SHM_MIN_SIZE, SegmentHeader, SharedMemorySegment};
+pub use segment::{SegmentHeader, SharedMemorySegment};
 pub use version::VersionCounter;
 pub use writer::SegmentWriter;
 

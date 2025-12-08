@@ -1,6 +1,7 @@
 //! Simple writer example demonstrating segment creation and writing
 
-use evo_shared_memory::{SHM_MIN_SIZE, SegmentWriter, ShmResult};
+use evo::shm::consts::SHM_MIN_SIZE;
+use evo_shared_memory::{SegmentWriter, ShmResult};
 use std::io;
 
 fn main() -> ShmResult<()> {

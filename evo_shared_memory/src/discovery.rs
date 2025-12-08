@@ -264,9 +264,9 @@ impl Default for SegmentDiscovery {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::SHM_MIN_SIZE;
     use crate::reader::SegmentReader;
     use crate::writer::SegmentWriter;
+    use evo::shm::consts::SHM_MIN_SIZE;
 
     #[test]
     fn test_discovery_creation() {

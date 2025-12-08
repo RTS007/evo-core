@@ -12,6 +12,7 @@ default = []
 rt = ["nix/process"]
 
 [dependencies]
+evo = { package = "evo_common", path = "../evo_common" }
 libc = "0.2.150"
 memmap2 = "0.9"
 serde = { version = "1.0.190", features = ["derive"] }

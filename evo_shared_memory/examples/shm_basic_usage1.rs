@@ -1,7 +1,8 @@
 //! Basic usage example for EVO Shared Memory
 //! Demonstrates simple producer-consumer pattern
 
-use evo_shared_memory::{SHM_MIN_SIZE, SegmentReader, SegmentWriter, ShmResult};
+use evo::shm::consts::SHM_MIN_SIZE;
+use evo_shared_memory::{SegmentReader, SegmentWriter, ShmResult};
 use serde::{Deserialize, Serialize};
 use std::thread;
 use std::time::Duration;

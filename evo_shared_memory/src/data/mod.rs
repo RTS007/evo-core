@@ -12,7 +12,7 @@ pub mod system;
 
 /// Shared memory segment names and size constants.
 pub mod segments {
-    use crate::SHM_MIN_SIZE;
+    use evo::shm::consts::SHM_MIN_SIZE;
 
     /// Segment for HAL sensor readings
     pub const HAL_SENSOR_DATA: &str = "evo_hal_sensors";

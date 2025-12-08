@@ -211,7 +211,7 @@ impl Drop for SegmentWriter {
 
 #[cfg(test)]
 mod tests {
-    use crate::SHM_MIN_SIZE;
+    use evo::shm::consts::SHM_MIN_SIZE;
 
     use super::*;
 

@@ -2,21 +2,10 @@
 
 use crate::error::{ShmError, ShmResult};
 use crate::version::VersionCounter;
+use evo::shm::consts::{CACHE_LINE_SIZE, EVO_SHM_MAGIC, SHM_MAX_SIZE, SHM_MIN_SIZE};
 use memmap2::MmapMut;
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
-
-/// Magic number for EVO shared memory segments
-pub const EVO_SHM_MAGIC: u64 = 0x45564F5F53484D00; // "EVO_SHM\0"
-
-/// Minimum segment size (4KB - one page)
-pub const SHM_MIN_SIZE: usize = 4096;
-
-/// Maximum segment size (1GB)
-pub const SHM_MAX_SIZE: usize = 1024 * 1024 * 1024;
-
-/// Cache line size for alignment
-pub const CACHE_LINE_SIZE: usize = 64;
 
 /// Segment header with cache-line alignment
 #[repr(C, align(64))]
@@ -185,6 +174,7 @@ pub fn validate_memory_alignment(address: usize) -> ShmResult<()> {
 
 /// Memory prefetch strategies for hot paths
 pub mod prefetch {
+    use evo::shm::consts::CACHE_LINE_SIZE;
     use std::arch::x86_64::_MM_HINT_T0;
     use std::arch::x86_64::_mm_prefetch;
 
@@ -204,8 +194,6 @@ pub mod prefetch {
     #[cfg(target_arch = "x86_64")]
     #[allow(dead_code)]
     pub fn prefetch_read(addr: *const u8, size: usize, hint: PrefetchHint) {
-        let cache_line_size = super::CACHE_LINE_SIZE;
-
         unsafe {
             let mut ptr = addr;
             let end = addr.add(size);
@@ -225,7 +213,7 @@ pub mod prefetch {
                         _mm_prefetch(ptr as *const i8, 2); // _MM_HINT_T2
                     }
                 }
-                ptr = ptr.add(cache_line_size);
+                ptr = ptr.add(CACHE_LINE_SIZE);
             }
         }
     }
@@ -262,7 +250,7 @@ pub mod prefetch {
 
 /// Cache-friendly data structure layout optimizations
 pub mod cache {
-    use super::CACHE_LINE_SIZE;
+    use evo::shm::consts::CACHE_LINE_SIZE;
 
     /// Align pointer to cache line boundary
     #[allow(dead_code)]

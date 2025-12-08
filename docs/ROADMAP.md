@@ -6,18 +6,17 @@ A concise, near-term plan for the open-source core, progressing from first found
 Goal: Establish minimal runtime and communication.
 
 - [X] Shared Memory lifecycle (single-writer segments, lock-free reads)
-- [ ] Minimal IPC (events + state exchange)
-- [ ] Basic API Liaison (gRPC) for commands
-- [ ] Watchdog for process supervision
+- [X] Minimal IPC (events + state exchange)
+- [X] Watchdog for process supervision
 
-## Phase 3: Hardware Abstraction (HAL)
+## Phase 2: Hardware Abstraction (HAL)
 Goal: Connect to hardware and simulation.
 
 - [ ] HAL traits and driver contracts
 - [ ] Simulation driver for offline testing
 - [ ] EtherCAT basic I/O (CoE)
 
-## Phase 2: Logic Execution (MVP)
+## Phase 3: Logic Execution (MVP)
 Goal: Execute machine logic safely and predictably.
 
 - [ ] Integrate Rhai engine with sandbox
@@ -36,7 +35,9 @@ Goal: Stable control on Linux PREEMPT_RT.
 ## Phase 5: Production Readiness (Pilot)
 Goal: Usable in pilot deployments.
 
-- [ ] Config loading/validation (YAML)
+- [ ] API Liaison (gRPC) for commands
+- [ ] API Liaison (MQTT) for telemetry
+- [X] Config loading/validation (TOML)
 - [ ] Startup/shutdown and recovery procedures
 - [ ] Basic diagnostics (health, alarms, metrics)
 - [ ] Setup and operation docs

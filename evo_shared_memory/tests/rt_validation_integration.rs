@@ -1,6 +1,7 @@
 //! Integration test for EVO RT validation - run with `cargo test rt_validation_integration`
 
-use evo_shared_memory::{SHM_MIN_SIZE, SegmentReader, SegmentWriter};
+use evo::shm::consts::SHM_MIN_SIZE;
+use evo_shared_memory::{SegmentReader, SegmentWriter};
 use std::thread;
 use std::time::{Duration, Instant};
 

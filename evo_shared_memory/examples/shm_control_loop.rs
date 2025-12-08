@@ -1,7 +1,7 @@
 //! Real-time control system using EVO shared memory
 //! Demonstrates deterministic, low-latency communication patterns
 
-use evo_shared_memory::SHM_MIN_SIZE;
+use evo::shm::consts::SHM_MIN_SIZE;
 use evo_shared_memory::{SegmentReader, SegmentWriter, ShmError, ShmResult};
 use serde::{Deserialize, Serialize};
 use std::thread;

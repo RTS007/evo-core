@@ -3,7 +3,8 @@
 //! Demonstrates simple producer-consumer pattern with error handling
 //! and basic performance monitoring.
 
-use evo_shared_memory::{SHM_MIN_SIZE, SegmentReader, SegmentWriter, ShmError, ShmResult};
+use evo::shm::consts::SHM_MIN_SIZE;
+use evo_shared_memory::{SegmentReader, SegmentWriter, ShmError, ShmResult};
 use serde::{Deserialize, Serialize};
 use std::thread;
 use std::time::{Duration, Instant};

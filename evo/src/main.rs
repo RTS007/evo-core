@@ -4,8 +4,9 @@
 //! Provides comprehensive lifecycle management, health monitoring, and
 //! coordination of all EVO subsystems and modules.
 
+use evo::shm::consts::SHM_MIN_SIZE;
 use evo_shared_memory::{
-    SHM_MIN_SIZE, SegmentDiscovery, SegmentWriter, ShmResult,
+    SegmentDiscovery, SegmentWriter, ShmResult,
     data::system::{EvoModuleStatus, SystemState},
 };
 use std::collections::HashMap;

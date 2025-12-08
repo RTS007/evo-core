@@ -77,7 +77,7 @@ Rationale: Formal enforcement keeps principles living and effective.
 ### XI. Specification-Driven Development (SDD) Discipline
 - All implementations MUST derive from formal specifications (*.spec files) following the standardized schema format with traceable lineage.
 - Specifications MUST define: functional behavior, timing contracts, resource bounds, error conditions, and state transitions.
-- Specification schema MUST be machine-readable (YAML/JSON) with automated validation and code generation capabilities.
+- Specification schema MUST be machine-readable (TOML) with automated validation and code generation capabilities.
 - Code generation from specs MUST be deterministic and reproducible; manual deviations require architectural approval.
 - Specification changes trigger impact analysis across dependent modules; breaking changes follow MAJOR version semantics.
 - Every specification MUST include machine-readable contracts for automated validation and test generation.

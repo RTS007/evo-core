@@ -1,14 +1,30 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! EVO Common Library
+//!
+//! This crate provides shared constants and configuration loading utilities
+//! for all EVO workspace crates.
+//!
+//! # Module Structure
+//!
+//! - [`shm`] - Shared memory constants and configuration
+//! - [`hal`] - Hardware abstraction layer constants and configuration
+//! - [`config`] - Configuration loading traits and types
+//! - [`prelude`] - Common re-exports for convenience
+//!
+//! # Usage
+//!
+//! Add to your `Cargo.toml` with alias for shorter imports:
+//! ```toml
+//! [dependencies]
+//! evo = { package = "evo_common", path = "../evo_common" }
+//! ```
+//!
+//! Then import:
+//! ```rust
+//! use evo_common::shm::consts::*;
+//! use evo_common::config::{ConfigLoader, SharedConfig};
+//! ```
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod config;
+pub mod hal;
+pub mod prelude;
+pub mod shm;

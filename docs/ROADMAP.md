@@ -37,7 +37,7 @@ Goal: Usable in pilot deployments.
 
 - [ ] API Liaison (gRPC) for commands
 - [ ] API Liaison (MQTT) for telemetry
-- [ ] Config loading/validation (YAML)
+- [X] Config loading/validation (TOML)
 - [ ] Startup/shutdown and recovery procedures
 - [ ] Basic diagnostics (health, alarms, metrics)
 - [ ] Setup and operation docs

@@ -1,6 +1,7 @@
 //! Basic functionality tests for EVO Shared Memory
 
-use evo_shared_memory::{SHM_MIN_SIZE, SegmentReader, SegmentWriter, ShmError, ShmResult};
+use evo::shm::consts::SHM_MIN_SIZE;
+use evo_shared_memory::{SegmentReader, SegmentWriter, ShmError, ShmResult};
 
 #[test]
 fn test_basic_write_read() -> ShmResult<()> {

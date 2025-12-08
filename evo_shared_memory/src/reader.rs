@@ -224,7 +224,8 @@ impl Drop for SegmentReader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{SHM_MIN_SIZE, writer::SegmentWriter};
+    use crate::writer::SegmentWriter;
+    use evo::shm::consts::SHM_MIN_SIZE;
 
     #[test]
     fn test_reader_attachment() {

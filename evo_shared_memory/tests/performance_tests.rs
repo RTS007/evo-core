@@ -1,6 +1,7 @@
 //! Performance and latency tests for EVO Shared Memory
 
-use evo_shared_memory::{SHM_MIN_SIZE, SegmentReader, SegmentWriter, ShmResult};
+use evo::shm::consts::SHM_MIN_SIZE;
+use evo_shared_memory::{SegmentReader, SegmentWriter, ShmResult};
 use std::sync::{Arc, Barrier};
 use std::thread;
 use std::time::{Duration, Instant};

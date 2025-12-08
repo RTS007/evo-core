@@ -1,7 +1,7 @@
 //! Read/write performance benchmarks
 
 use criterion::{Criterion, criterion_group, criterion_main};
-use evo_shared_memory::SHM_MIN_SIZE;
+use evo::shm::consts::SHM_MIN_SIZE;
 use evo_shared_memory::reader::SegmentReader;
 use evo_shared_memory::writer::SegmentWriter;
 use std::hint::black_box;

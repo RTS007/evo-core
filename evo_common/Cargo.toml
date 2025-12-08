@@ -2,5 +2,15 @@
 name = "evo_common"
 version = "0.1.0"
 edition = "2024"
+authors = ["RTS007"]
+description = "Common library with shared constants and configuration for EVO workspace"
+license = "AGPL3"
+repository = "https://github.com/RTS007/evo-core"
 
 [dependencies]
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.8"
+thiserror = "2.0"
+
+[dev-dependencies]
+tempfile = "3.20"

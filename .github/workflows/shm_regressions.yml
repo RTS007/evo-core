@@ -41,7 +41,7 @@ jobs:
         override: true
 
     - name: Cache Rust Dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cargo/bin/
@@ -116,7 +116,7 @@ jobs:
         set -euo pipefail
         
         # Run the regression detection script
-        if ./.ci/performance_regression_detection.sh --verbose; then
+        if ./.ci/shm_regressions.sh --verbose; then
           echo "benchmark_status=success" >> $GITHUB_OUTPUT
         else
           echo "benchmark_status=failure" >> $GITHUB_OUTPUT
@@ -125,7 +125,7 @@ jobs:
 
     - name: Upload Benchmark Results
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: benchmark-results-${{ github.run_id }}
         path: |
@@ -139,13 +139,13 @@ jobs:
         steps.benchmarks.outputs.benchmark_status == 'success'
       run: |
         echo "Updating performance baselines for main branch..."
-        ./.ci/performance_regression_detection.sh --update-baseline
+        ./.ci/shm_regressions.sh --update-baseline
 
     - name: Upload Updated Baselines
       if: |
         github.ref == 'refs/heads/main' && 
         steps.benchmarks.outputs.benchmark_status == 'success'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: performance-baselines-${{ github.sha }}
         path: .ci/performance_baselines/
@@ -286,14 +286,14 @@ jobs:
         export BENCHMARK_THREADS=4
         
         cargo build --release --examples
-        ./.ci/performance_regression_detection.sh --benchmark-only
+        ./.ci/shm_regressions.sh --benchmark-only
 
     - name: Update Baselines
       run: |
-        ./.ci/performance_regression_detection.sh --update-baseline
+        ./.ci/shm_regressions.sh --update-baseline
 
     - name: Upload New Baselines
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: nightly-baselines-${{ github.sha }}
         path: .ci/performance_baselines/

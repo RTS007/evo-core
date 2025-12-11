@@ -20,8 +20,8 @@
 //!
 //! Then import:
 //! ```rust
-//! use evo_common::shm::consts::*;
-//! use evo_common::config::{ConfigLoader, SharedConfig};
+//! use evo::shm::consts::*;
+//! use evo::config::{ConfigLoader, SharedConfig};
 //! ```
 
 pub mod config;

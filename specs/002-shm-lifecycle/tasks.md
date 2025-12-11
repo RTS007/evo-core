@@ -122,7 +122,7 @@
 **Purpose**: Integration with existing EVO modules and RT performance validation
 
 - [x] T046 [P] Create Control Unit SHM integration in evo_control_unit/src/shm_integration.rs
-- [x] T047 [P] Create HAL Core SHM integration in evo_hal_core/src/shm_integration.rs
+- [x] T047 [P] Create HAL Core SHM integration in evo_hal/src/shm_integration.rs
 - [x] T048 [P] Create Recipe Executor SHM integration in evo_recipe_executor/src/shm_integration.rs
 - [ ] T049 [P] Create API Liaison SHM integration in evo_grpc/src/shm_integration.rs
 - [ ] T050 Implement ShmLifecycleManager trait for EVO supervisor in evo/src/main.rs

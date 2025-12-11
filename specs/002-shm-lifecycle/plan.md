@@ -100,7 +100,7 @@ evo_shared_memory/
 evo/src/main.rs                   # EVO supervisor - SHM lifecycle management
 evo_control_unit/src/
 ├── shm_integration.rs            # Control unit SHM usage (EXCLUSIVE writer for control_state)
-evo_hal_core/src/ 
+evo_hal/src/ 
 ├── shm_integration.rs            # HAL SHM usage (EXCLUSIVE writer for phys input-IO)
 evo_recipe_executor/src/
 ├── shm_integration.rs            # Recipe executor SHM usage (EXCLUSIVE writer for phys output-IO)

@@ -1,5 +1,5 @@
 [package]
-name = "evo_hal_core"
+name = "evo_hal"
 version = "0.1.0"
 edition = "2024"
 

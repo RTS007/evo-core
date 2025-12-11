@@ -9,7 +9,7 @@ members = [
    "evo_mqtt",             # API Liaison: MQTT
    "evo_recipe_executor",  # Recipe executor
    "evo_control_unit",     # Control unit
-   "evo_hal_core",         # HAL Core
+   "evo_hal",              # HAL Core
    "evo_diagnostic",       # Diagnostic
    "evo_shared_memory",    # Shared memory lifecycle management
 ]

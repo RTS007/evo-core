@@ -8,4 +8,7 @@
 //! use evo_common::prelude::*;
 //! ```
 
-pub use crate::config::{ConfigError, ConfigLoader, LogLevel, SharedConfig};
+pub use log::Level as LogLevel;
+pub use log::LevelFilter as LogLevelFilter;
+
+pub use crate::config::{ConfigError, ConfigLoader, SharedConfig};

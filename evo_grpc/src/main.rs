@@ -4,6 +4,7 @@
 //! Aggregates real-time data from EVO modules via shared memory for optimal API performance.
 
 use evo_shared_memory::{
+    SegmentReader, SegmentWriter, ShmResult,
     data::api::{
         ApiRequestMetrics, AuthStatus, ClientSession, ControlSystemSummary, HardwareSummary,
         PerformanceSummary, RecipeSummary, RequestStatus, SystemHealth, SystemStateSnapshot,
@@ -12,7 +13,6 @@ use evo_shared_memory::{
     data::hal::SensorReading,
     data::recipe::RecipeExecutionState,
     data::segments::*,
-    SegmentReader, SegmentWriter, ShmResult,
 };
 use std::thread;
 use std::time::Duration;
@@ -129,7 +129,7 @@ fn demo_api_operations(
         };
 
         // Read control data if available
-        if let Some(ref mut reader) = control_reader {
+        if let Some(reader) = control_reader.as_mut() {
             if let Ok(control_data) = reader.read() {
                 if let Ok(control_state) = serde_json::from_slice::<ControlState>(&control_data) {
                     system_snapshot.control_summary = ControlSystemSummary {
@@ -147,7 +147,7 @@ fn demo_api_operations(
         }
 
         // Read HAL data if available
-        if let Some(ref mut reader) = hal_reader {
+        if let Some(reader) = hal_reader.as_mut() {
             if let Ok(hal_data) = reader.read() {
                 if let Ok(_sensor_reading) = serde_json::from_slice::<SensorReading>(&hal_data) {
                     system_snapshot.hardware_summary = HardwareSummary {
@@ -164,7 +164,7 @@ fn demo_api_operations(
         }
 
         // Read recipe data if available
-        if let Some(ref mut reader) = recipe_reader {
+        if let Some(reader) = recipe_reader.as_mut() {
             if let Ok(recipe_data) = reader.read() {
                 if let Ok(recipe_state) =
                     serde_json::from_slice::<RecipeExecutionState>(&recipe_data)

@@ -19,7 +19,7 @@
 //! ```
 //!
 //! Then import:
-//! ```rust
+//! ```rust, ignore
 //! use evo::shm::consts::*;
 //! use evo::config::{ConfigLoader, SharedConfig};
 //! ```

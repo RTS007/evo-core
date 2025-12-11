@@ -23,6 +23,7 @@
 //! }
 //! ```
 
+use log::Level as LogLevel;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use thiserror::Error;
@@ -46,26 +47,6 @@ pub enum ConfigError {
     ValidationError(String),
 }
 
-/// Log level for application logging.
-///
-/// Represents the verbosity level of logging output.
-/// Uses lowercase serde values for TOML compatibility.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
-#[serde(rename_all = "lowercase")]
-pub enum LogLevel {
-    /// Most verbose, detailed tracing information.
-    Trace,
-    /// Debug information useful during development.
-    Debug,
-    /// General information about application operation.
-    #[default]
-    Info,
-    /// Warning messages for potentially problematic situations.
-    Warn,
-    /// Error messages for serious problems.
-    Error,
-}
-
 /// Common configuration fields shared across all EVO applications.
 ///
 /// This struct should be embedded in application-specific configuration
@@ -76,16 +57,17 @@ pub enum LogLevel {
 /// ```toml
 /// [shared]
 /// log_level = "debug"
-/// service_name = "evo-hal-sim-01"
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SharedConfig {
-    /// Logging verbosity level.
-    #[serde(default)]
+    #[serde(default = "default_log_level")]
     pub log_level: LogLevel,
 
-    /// Application instance identifier.
     pub service_name: String,
+}
+
+fn default_log_level() -> LogLevel {
+    LogLevel::Info
 }
 
 impl SharedConfig {
@@ -169,7 +151,7 @@ mod tests {
 
     #[test]
     fn test_log_level_default() {
-        assert_eq!(LogLevel::default(), LogLevel::Info);
+        assert_eq!(default_log_level(), LogLevel::Info);
     }
 
     #[test]
@@ -183,27 +165,27 @@ mod tests {
         let wrapper = TestWrapper {
             level: LogLevel::Trace,
         };
-        assert!(toml::to_string(&wrapper).unwrap().contains("trace"));
+        assert!(toml::to_string(&wrapper).unwrap().contains("TRACE"));
 
         let wrapper = TestWrapper {
             level: LogLevel::Debug,
         };
-        assert!(toml::to_string(&wrapper).unwrap().contains("debug"));
+        assert!(toml::to_string(&wrapper).unwrap().contains("DEBUG"));
 
         let wrapper = TestWrapper {
             level: LogLevel::Info,
         };
-        assert!(toml::to_string(&wrapper).unwrap().contains("info"));
+        assert!(toml::to_string(&wrapper).unwrap().contains("INFO"));
 
         let wrapper = TestWrapper {
             level: LogLevel::Warn,
         };
-        assert!(toml::to_string(&wrapper).unwrap().contains("warn"));
+        assert!(toml::to_string(&wrapper).unwrap().contains("WARN"));
 
         let wrapper = TestWrapper {
             level: LogLevel::Error,
         };
-        assert!(toml::to_string(&wrapper).unwrap().contains("error"));
+        assert!(toml::to_string(&wrapper).unwrap().contains("ERROR"));
     }
 
     #[test]

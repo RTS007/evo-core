@@ -8,7 +8,7 @@ set -euo pipefail
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 BENCHMARK_DIR="$PROJECT_ROOT/target/benchmark_results"
 BASELINE_DIR="$PROJECT_ROOT/.ci/performance_baselines"
 REPORT_DIR="$PROJECT_ROOT/target/regression_reports"
@@ -201,12 +201,15 @@ build_benchmarks() {
     else
         cargo build --release --bins --examples > /dev/null 2>&1
     fi
+
+    echo -e "$PROJECT_ROOT"
     
     # Verify benchmark binaries exist
     local benchmarks=(
-        "target/release/examples/basic_usage"
-        "target/release/examples/rt_control_loop"  
-        "target/release/examples/high_throughput"
+        "./target/release/examples/shm_basic_usage1"  
+        "./target/release/examples/shm_basic_usage2"
+        "./target/release/examples/shm_1_evo_integration"
+        "./target/release/examples/shm_high_throughput"
     )
     
     for benchmark in "${benchmarks[@]}"; do
@@ -306,9 +309,10 @@ run_benchmarks() {
     
     # Define benchmarks
     local benchmarks=(
-        "basic_usage:target/release/examples/basic_usage"
-        "rt_control_loop:target/release/examples/rt_control_loop"
-        "high_throughput:target/release/examples/high_throughput"
+        "shm_basic_usage1:./target/release/examples/shm_basic_usage1"  
+        "shm_basic_usage2:./target/release/examples/shm_basic_usage2"
+        "shm_1_evo_integration:./target/release/examples/shm_1_evo_integration"
+        "shm_high_throughput:./target/release/examples/shm_high_throughput"
     )
     
     local failed_count=0

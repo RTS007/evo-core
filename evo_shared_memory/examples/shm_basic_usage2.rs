@@ -144,19 +144,31 @@ fn producer_thread() -> ShmResult<()> {
 /// Consumer thread that reads sensor data
 fn consumer_thread() -> ShmResult<()> {
     println!("Starting consumer...");
-
     // Wait a bit for producer to create the segment
     thread::sleep(Duration::from_millis(100));
 
-    // Open the shared memory segment for reading
-    let mut reader = loop {
-        match SegmentReader::attach("sensor_readings") {
-            Ok(r) => break r,
-            Err(ShmError::NotFound { .. }) => {
-                thread::sleep(Duration::from_millis(10));
-                continue;
+    let start_time = Instant::now();
+
+    // Open the shared memory segment for reading with retry limit
+    let mut reader = {
+        let max_retries = 50; // maksymalna liczba prób
+        let mut attempts = 0;
+
+        loop {
+            match SegmentReader::attach("sensor_readings") {
+                Ok(r) => break r,
+                Err(ShmError::NotFound { .. }) => {
+                    attempts += 1;
+                    if attempts >= max_retries {
+                        return Err(ShmError::NotFound {
+                            name: "sensor_readings".to_string(),
+                        });
+                    }
+                    thread::sleep(Duration::from_millis(10));
+                    continue;
+                }
+                Err(e) => return Err(e),
             }
-            Err(e) => return Err(e),
         }
     };
 
@@ -199,7 +211,7 @@ fn consumer_thread() -> ShmResult<()> {
         // Check if we should stop (in a real app, we'd have a signal)
         // For this example, we'll just rely on the main thread killing us or running forever
         // But since we're in a loop, let's check if we've done enough work
-        if read_count >= 1000 {
+        if start_time.elapsed() > Duration::from_secs(5) || read_count >= 1000 {
             break;
         }
     }

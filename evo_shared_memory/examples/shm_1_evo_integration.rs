@@ -3,6 +3,7 @@
 //! Demonstrates how to integrate the shared memory system with various EVO modules
 //! including Control Unit, HAL Core, Recipe Executor, and GRPC API integration.
 
+use evo::shm::consts::SHM_MIN_SIZE;
 use evo_shared_memory::{SegmentReader, SegmentWriter, ShmError, ShmResult};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -171,7 +172,7 @@ fn main() -> ShmResult<()> {
 fn control_unit_integration() -> ShmResult<()> {
     println!("Starting Control Unit integration...");
 
-    let mut command_writer = SegmentWriter::create("control_commands", 1000)?;
+    let mut command_writer = SegmentWriter::create("control_commands", SHM_MIN_SIZE)?;
     let mut command_counter = 0;
 
     for cycle in 0..50 {
@@ -220,7 +221,7 @@ fn hal_core_integration() -> ShmResult<()> {
 
     thread::sleep(Duration::from_millis(50)); // Slight startup delay
 
-    let mut status_writer = SegmentWriter::create("hardware_status", 1000)?;
+    let mut status_writer = SegmentWriter::create("hardware_status", SHM_MIN_SIZE)?;
     let devices = [0x1001, 0x1002, 0x1003, 0x1004]; // Device IDs
     let mut update_counter = 0;
 
@@ -268,7 +269,7 @@ fn recipe_executor_integration() -> ShmResult<()> {
 
     thread::sleep(Duration::from_millis(100)); // Startup delay
 
-    let mut state_writer = SegmentWriter::create("recipe_state", 1000)?;
+    let mut state_writer = SegmentWriter::create("recipe_state", SHM_MIN_SIZE)?;
     let recipe_id = 12345;
     let total_steps = 10;
 

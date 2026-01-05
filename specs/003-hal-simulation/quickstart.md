@@ -23,21 +23,15 @@ cargo build --release -p evo_hal
 Create `config/machine.toml`:
 
 ```toml
-[shared]
-log_level = "info"
-service_name = "hal-01"
-
-# System cycle time in microseconds (optional, defaults to 1000µs = 1ms)
-# Overrides evo_common::prelude::DEFAULT_CYCLE_TIME_US
+# Root-level config fields come BEFORE [shared] section
+# Cycle time in microseconds (defaults to 1000µs = 1ms)
 cycle_time_us = 1000
 
 # State persistence (used by all drivers for axis positions across restarts)
-state_file = "hal_state.bin"
+state_file = "state/hal_state.bin"
 
-# === DRIVER SELECTION ===
-# List of drivers to load (simulation cannot be mixed with others)
-# Use --simulate flag for development instead of listing here
-drivers = ["ethercat"]  # or ["ethercat", "canopen"] for multiple
+# Drivers to load (simulation cannot be mixed with others)
+drivers = ["simulation"]
 
 # Axis configuration files (relative to config dir)
 axes = [
@@ -45,12 +39,10 @@ axes = [
     "axes/axis_02.toml",
 ]
 
-# === PER-DRIVER CONFIGURATION ===
-[driver_config.simulation]
-enable_physics = true
-
-# [driver_config.ethercat]
-# network_interface = "eth0"
+# Shared settings section
+[shared]
+log_level = "info"
+name = "hal-01"
 
 # Digital Inputs (sensors)
 [[digital_inputs]]
@@ -140,12 +132,14 @@ soft_limit_negative = 0.0      # mm
 
 # Referencing
 [referencing]
-required = "yes"
-mode = 1                       # switch + index
-reference_switch = 0           # DI index
+required = "yes"                    # "yes", "perhaps", or "no"
+mode = "SwitchThenIndex"            # SwitchThenIndex, SwitchOnly, IndexOnly, LimitThenIndex, LimitOnly, None
+reference_switch_position = 0.0     # mm - where the switch is located
+index_pulse_position = 0.0          # mm - where index pulse occurs
 normally_closed = false
 negative_direction = true
-speed = 10.0                   # mm/s
+speed = 10.0                        # mm/s
+timeout_ms = 30000                  # ms - referencing timeout
 ```
 
 Create `config/axes/axis_02.toml`:
@@ -164,10 +158,13 @@ soft_limit_positive = 300.0
 soft_limit_negative = 0.0
 
 [referencing]
-required = "perhaps"
-mode = 2                       # switch only
-reference_switch = 1
+required = "perhaps"           # Use persisted position if available
+mode = "SwitchOnly"            # Switch without index
+reference_switch_position = 0.0
+normally_closed = false
+negative_direction = false
 speed = 8.0
+timeout_ms = 30000
 ```
 
 ### 3. Slave axis example
@@ -178,10 +175,12 @@ axis_type = "slave"
 
 master_axis = 0                # Index of master (X_Axis)
 encoder_resolution = 1000.0
+slave_ratio = 1.0              # 1:1 ratio with master
+slave_offset = 0.0             # Optional offset
 
 [referencing]
 required = "no"
-mode = 0
+mode = "None"
 ```
 
 ### 4. Simple axis example (on/off)
@@ -190,9 +189,12 @@ mode = 0
 name = "Gripper"
 axis_type = "simple"
 
+# Simple axes move instantly to target
+encoder_resolution = 1.0       # 1:1 for simple axes
+
 [referencing]
 required = "no"
-mode = 0
+mode = "None"
 ```
 
 ## Run
@@ -215,13 +217,13 @@ mode = 0
 evo_hal [OPTIONS]
 
 Options:
-  -c, --config <PATH>   Path to machine.toml [default: /etc/evo/machine.toml]
-  -s, --simulate        Force simulation driver ONLY (exclusive, ignores other drivers)
-  -d, --driver <NAME>   Load driver (can be repeated: -d ethercat -d canopen)
-  -v, --verbose         Increase logging verbosity
-  -q, --quiet           Decrease logging verbosity
-  -h, --help            Print help
-  -V, --version         Print version
+  -c, --config <CONFIG>   Path to machine configuration file (machine.toml) [default: /etc/evo/machine.toml]
+  -s, --simulate          Force simulation driver (exclusive - ignores all other drivers)
+  -d, --driver <DRIVERS>  Load specific driver (can be specified multiple times)
+  -v, --verbose           Enable verbose logging
+      --json              Output logs in JSON format
+  -h, --help              Print help
+  -V, --version           Print version
 ```
 
 **Driver selection rules:**
@@ -318,21 +320,21 @@ rm config/hal_state.bin
 ## Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Control Unit                              │
-│                         │                                    │
-│                         ▼ (SHM)                             │
+┌────────────────────────────────────────────────────────────┐
+│                    Control Unit                            │
+│                         │                                  │
+│                         ▼ (SHM)                            │
 │  ┌──────────────────────────────────────────────────────┐  │
-│  │              evo_hal (single crate)                   │  │
+│  │              evo_hal (single crate)                  │  │
 │  │  ┌─────────────┐    ┌─────────────┐                  │  │
 │  │  │ SHM Manager │◄──►│ RT Loop     │                  │  │
 │  │  └─────────────┘    └──────┬──────┘                  │  │
-│  │                            │                          │  │
+│  │                            │                         │  │
 │  │                   ┌────────┴────────┐                │  │
 │  │                   │  HalDriver      │                │  │
 │  │                   │  (trait object) │                │  │
 │  │                   └────────┬────────┘                │  │
-│  │                            │                          │  │
+│  │                            │                         │  │
 │  │  src/drivers/ ─────────────┼──────────────────────   │  │
 │  │         ┌──────────────────┼──────────────────┐      │  │
 │  │         ▼                  ▼                  ▼      │  │
@@ -341,7 +343,7 @@ rm config/hal_state.bin
 │  │  │ (this feat) │    │  (future)   │    │ (future)  │ │  │
 │  │  └─────────────┘    └─────────────┘    └───────────┘ │  │
 │  └──────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
+└────────────────────────────────────────────────────────────┘
 ```
 
 ## Next Steps

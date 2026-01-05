@@ -7,7 +7,7 @@
 use evo::shm::consts::SHM_MIN_SIZE;
 use evo_shared_memory::{
     SegmentDiscovery, SegmentWriter, ShmResult,
-    data::system::{EvoModuleStatus, SystemState},
+    data::system::{EvoModuleStatus, ModuleState, SystemState},
 };
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -18,7 +18,6 @@ use tracing::{error, info};
 pub struct EvoSupervisor {
     supervisor_id: String,
     system_state_writer: Option<SegmentWriter>,
-    module_status_writer: Option<SegmentWriter>,
     discovery: SegmentDiscovery,
     module_statuses: HashMap<String, EvoModuleStatus>,
     system_state: SystemState,
@@ -29,7 +28,6 @@ impl EvoSupervisor {
         Ok(Self {
             supervisor_id,
             system_state_writer: None,
-            module_status_writer: None,
             discovery: SegmentDiscovery::new(),
             module_statuses: HashMap::new(),
             system_state: SystemState::default(),
@@ -40,13 +38,8 @@ impl EvoSupervisor {
         info!("🔧 Initializing EVO Supervisor: {}", self.supervisor_id);
 
         // Create system state segment
-        self.system_state_writer = Some(SegmentWriter::create("evo_system_state", SHM_MIN_SIZE)?);
-
-        // Create module status segment
-        self.module_status_writer = Some(SegmentWriter::create(
-            "evo_module_status",
-            SHM_MIN_SIZE * 2,
-        )?);
+        // Base names; SegmentWriter adds evo_ prefix and PID to avoid collisions
+        self.system_state_writer = Some(SegmentWriter::create("status", SHM_MIN_SIZE)?);
 
         // Initialize system state
         let now = SystemTime::now()
@@ -89,10 +82,81 @@ impl EvoSupervisor {
     async fn monitor_modules(&mut self) -> ShmResult<()> {
         let segments = self.discovery.list_segments()?;
 
-        info!("📡 Found {} active segments", segments.len());
+        // Count different segment types
+        let mut module_segments = 0;
 
-        // Update segment count
+        for segment in &segments {
+            // Skip evo (watchdog) segments
+            if segment.name == "status" {
+                continue;
+            }
+
+            if segment.name.starts_with("module_") {
+                module_segments += 1;
+                // Try to read module status
+                match evo_shared_memory::SegmentReader::attach(&segment.name) {
+                    Ok(mut reader) => {
+                        match reader.read() {
+                            Ok(data) => {
+                                // Find end of JSON (last '}' character) - SHM may have trailing zeros
+                                let json_end = data.iter().rposition(|&b| b == b'}');
+                                let json_data = match json_end {
+                                    Some(pos) => &data[..=pos],
+                                    None => data,
+                                };
+
+                                match serde_json::from_slice::<EvoModuleStatus>(json_data) {
+                                    Ok(status) => {
+                                        info!(
+                                            "  📦 Module '{}': {:?} ({:?}) -> {} = {:.2}",
+                                            status.module_id,
+                                            status.state,
+                                            status.health,
+                                            "max_cycle_us",
+                                            status
+                                                .custom_metrics
+                                                .get("max_cycle_us")
+                                                .unwrap_or(&0.0)
+                                        );
+
+                                        self.module_statuses
+                                            .insert(status.module_id.clone(), status);
+                                    }
+                                    Err(e) => {
+                                        info!(
+                                            "    ⚠️ Failed to parse module status for '{}': {}",
+                                            segment.name, e
+                                        );
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                info!("    ⚠️ Failed to read segment '{}': {:?}", segment.name, e);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        info!(
+                            "    ⚠️ Failed to attach to segment '{}': {:?}",
+                            segment.name, e
+                        );
+                    }
+                }
+            }
+        }
+
+        info!("📡 Monitoring: {} modules", module_segments);
+
+        // Update system state
         self.system_state.active_segments = segments.len() as u32;
+        self.system_state.running_modules = self.module_statuses.len() as u32;
+
+        // Count modules in error state
+        self.system_state.error_modules = self
+            .module_statuses
+            .values()
+            .filter(|s| s.state == ModuleState::Error)
+            .count() as u32;
 
         Ok(())
     }

@@ -30,3 +30,4 @@ target
 # Specify
 **/.specify/scripts/
 **/.specify/templates/
+hal_state

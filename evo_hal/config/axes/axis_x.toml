@@ -1,0 +1,33 @@
+# Axis X Configuration
+# Linear positioning axis
+
+name = "axis_x"
+axis_type = "positioning"
+
+# Encoder resolution (counts per user unit, e.g., counts per mm)
+encoder_resolution = 10000.0
+
+# Motion limits
+max_velocity = 100.0       # mm/s
+max_acceleration = 500.0   # mm/s²
+
+# Error detection
+lag_error_limit = 1.0      # mm - position tracking error limit
+
+# In-position window
+in_position_window = 0.01  # mm
+
+# Soft limits (optional)
+soft_limit_positive = 500.0  # mm
+soft_limit_negative = 0.0    # mm
+
+# Referencing configuration
+[referencing]
+required = "yes"
+mode = "SwitchThenIndex"
+speed = 10.0                    # mm/s - referencing speed
+reference_switch_position = 0.0 # mm - where the switch is located
+index_pulse_position = 0.0      # mm - where index pulse occurs
+negative_direction = false      # search in positive direction first
+normally_closed = false         # switch type
+timeout_ms = 30000              # ms - referencing timeout

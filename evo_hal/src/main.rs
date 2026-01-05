@@ -1,137 +1,139 @@
-//! # EVO HAL Core
+//! # EVO HAL Core Binary
 //!
-//! Hardware Abstraction Layer with shared memory integration for real-time
+//! Hardware Abstraction Layer with pluggable driver architecture for real-time
 //! sensor data, actuator control, and I/O management.
+//!
+//! # Usage
+//!
+//! ```bash
+//! # Run with simulation driver (exclusive mode)
+//! evo_hal --config config/machine.toml --simulate
+//!
+//! # Run with specific driver(s)
+//! evo_hal --config config/machine.toml --driver ethercat
+//!
+//! # Verbose logging
+//! evo_hal -c config/machine.toml -s -v
+//! ```
 
-use evo_shared_memory::{
-    SegmentWriter, ShmResult,
-    data::hal::{
-        ActuatorMode, ActuatorState, ActuatorStatus, CommStatus, HardwareConfig, IOBankStatus,
-        SensorReading, SensorStatus,
-    },
-    data::segments::{
-        HAL_ACTUATOR_STATE, HAL_HARDWARE_CONFIG, HAL_IO_BANK_STATUS, HAL_SENSOR_DATA,
-        STANDARD_SEGMENT_SIZE,
-    },
-};
-use std::collections::HashMap;
-use std::thread;
-use std::time::Duration;
-use std::time::{SystemTime, UNIX_EPOCH};
-use tracing::info;
+#![deny(warnings)]
 
-fn main() -> ShmResult<()> {
-    println!("EVO HAL Core starting...");
+use clap::Parser;
+use evo_hal::core::HalCore;
+use std::path::PathBuf;
+use std::sync::atomic::Ordering;
+use tracing::{error, info, Level};
+use tracing_subscriber::EnvFilter;
+
+/// EVO HAL Core - Hardware Abstraction Layer with pluggable drivers
+#[derive(Parser, Debug)]
+#[command(name = "evo_hal")]
+#[command(author = "RTS007")]
+#[command(version)]
+#[command(about = "Hardware Abstraction Layer Core with pluggable driver architecture")]
+#[command(long_about = None)]
+struct Args {
+    /// Path to machine configuration file (machine.toml)
+    #[arg(short, long, default_value = "/etc/evo/machine.toml")]
+    config: PathBuf,
+
+    /// Force simulation driver (exclusive - ignores all other drivers)
+    #[arg(short = 's', long)]
+    simulate: bool,
+
+    /// Load specific driver (can be specified multiple times)
+    #[arg(short, long = "driver", action = clap::ArgAction::Append)]
+    drivers: Vec<String>,
+
+    /// Enable verbose logging
+    #[arg(short, long)]
+    verbose: bool,
+
+    /// Output logs in JSON format
+    #[arg(long)]
+    json: bool,
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if let Err(e) = run() {
+        // Use tracing for errors so formatting matches INFO logs
+        error!("HAL startup failed: {}", e);
+        std::process::exit(1);
+    }
+    Ok(())
+}
+
+fn run() -> Result<(), Box<dyn std::error::Error>> {
+    let args = Args::parse();
 
     // Initialize tracing
-    tracing_subscriber::fmt::init();
+    setup_tracing(&args);
 
-    info!("Initializing EVO HAL Core with centralized data structures");
+    info!("EVO HAL Core v{} starting...", env!("CARGO_PKG_VERSION"));
 
-    // Create writers for HAL data
-    let mut sensor_writer = SegmentWriter::create(HAL_SENSOR_DATA, STANDARD_SEGMENT_SIZE)?;
-    let mut actuator_writer = SegmentWriter::create(HAL_ACTUATOR_STATE, STANDARD_SEGMENT_SIZE)?;
-    let mut io_writer = SegmentWriter::create(HAL_IO_BANK_STATUS, STANDARD_SEGMENT_SIZE)?;
-    let mut config_writer = SegmentWriter::create(HAL_HARDWARE_CONFIG, STANDARD_SEGMENT_SIZE)?;
-
-    info!("HAL Core shared memory segments initialized successfully");
-
-    // Initialize hardware configuration
-    let mut config = HardwareConfig {
-        version: 1,
-        sensor_calibrations: HashMap::new(),
-        actuator_limits: HashMap::new(),
-        io_configurations: HashMap::new(),
-        safety_interlocks: Vec::new(),
-        update_frequency: 100.0,
-        timestamp_us: SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_micros() as u64,
+    // Determine driver to use
+    let driver_name = if args.simulate {
+        info!("Simulation mode enabled (exclusive)");
+        "simulation".to_string()
+    } else if !args.drivers.is_empty() {
+        info!("Drivers from CLI: {:?}", args.drivers);
+        // For now, use first driver (multi-driver support is future work)
+        args.drivers[0].clone()
+    } else {
+        // Load from config file to determine drivers
+        "simulation".to_string() // Default to simulation if nothing specified
     };
 
-    // Add some example calibrations
-    config
-        .sensor_calibrations
-        .insert("temp_01".to_string(), vec![0.1, 25.0, 0.001]);
-    config
-        .sensor_calibrations
-        .insert("pressure_01".to_string(), vec![1.0, 0.0, 0.01]);
-    config
-        .actuator_limits
-        .insert("motor_01".to_string(), (0.0, 100.0));
+    // Load configuration
+    let config = HalCore::load_config(&args.config)?;
+    
+    // Get config directory for resolving relative paths
+    let config_dir = args.config.parent().unwrap_or(std::path::Path::new("."));
 
-    // Write initial configuration
-    let config_data = serde_json::to_vec(&config)?;
-    config_writer.write(&config_data)?;
-    info!("Initial hardware configuration written");
+    // Create HalCore
+    let mut hal_core = HalCore::new(config)?;
 
-    // Main HAL operation loop
-    let mut cycle_count = 0u64;
+    // Load axis configurations
+    hal_core.load_axis_configs(config_dir)?;
 
-    loop {
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_micros() as u64;
+    // Setup signal handlers
+    let running = hal_core.running_flag();
+    ctrlc::set_handler(move || {
+        info!("Received shutdown signal");
+        running.store(false, Ordering::SeqCst);
+    })?;
 
-        // Simulate sensor readings
-        let sensor_data = SensorReading {
-            sensor_id: "temp_sensor_01".to_string(),
-            raw_value: 25.5 + (cycle_count as f64 * 0.1).sin(),
-            calibrated_value: 25.5 + (cycle_count as f64 * 0.1).sin(),
-            unit: "°C".to_string(),
-            timestamp_us: now,
-            quality_flags: 0,
-            status: SensorStatus::Normal,
-            uncertainty: 0.1,
-        };
+    // Initialize HAL Core with driver
+    hal_core.init(&driver_name)?;
 
-        // Write sensor data
-        let sensor_json = serde_json::to_vec(&sensor_data)?;
-        sensor_writer.write(&sensor_json)?;
+    // Run the RT loop
+    if let Err(e) = hal_core.run() {
+        error!("RT loop error: {}", e);
+    }
 
-        // Simulate actuator state
-        let actuator_data = ActuatorState {
-            actuator_id: "motor_01".to_string(),
-            current_value: 50.0 + (cycle_count as f64 * 0.05).cos() * 10.0,
-            target_value: 50.0,
-            output_percent: 75.0,
-            status: ActuatorStatus::Active,
-            timestamp_us: now,
-            error_code: 0,
-            mode: ActuatorMode::Auto,
-        };
+    // Shutdown
+    hal_core.shutdown()?;
 
-        // Write actuator data
-        let actuator_json = serde_json::to_vec(&actuator_data)?;
-        actuator_writer.write(&actuator_json)?;
+    info!("EVO HAL Core shutdown complete");
+    Ok(())
+}
 
-        // Simulate I/O bank status
-        let io_data = IOBankStatus {
-            bank_id: "io_bank_01".to_string(),
-            digital_inputs: 0b10101010, // Example bit pattern
-            digital_outputs: 0b01010101,
-            analog_inputs: vec![3.3, 2.1, 4.8, 1.2],
-            analog_outputs: vec![2.5, 3.0],
-            comm_status: CommStatus::Good,
-            timestamp_us: now,
-            config_version: config.version,
-        };
+/// Setup tracing subscriber based on CLI arguments
+fn setup_tracing(args: &Args) {
+    let level = if args.verbose {
+        Level::DEBUG
+    } else {
+        Level::INFO
+    };
 
-        // Write I/O data
-        let io_json = serde_json::to_vec(&io_data)?;
-        io_writer.write(&io_json)?;
+    let filter = EnvFilter::from_default_env().add_directive(level.into());
 
-        cycle_count += 1;
-
-        if cycle_count % 100 == 0 {
-            info!(
-                "HAL Core cycle {}: Sensor={:.2}°C, Actuator={:.1}%, IO=OK",
-                cycle_count, sensor_data.calibrated_value, actuator_data.output_percent
-            );
-        }
-
-        thread::sleep(Duration::from_millis(10)); // 100 Hz update rate
+    if args.json {
+        tracing_subscriber::fmt()
+            .with_env_filter(filter)
+            .json()
+            .init();
+    } else {
+        tracing_subscriber::fmt().with_env_filter(filter).init();
     }
 }

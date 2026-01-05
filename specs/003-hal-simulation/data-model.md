@@ -315,6 +315,18 @@ pub struct ReferencingConfig {
     /// Show error if K0 distance is too small
     #[serde(default)]
     pub show_k0_distance_error: bool,
+    
+    //=== Simulation-specific fields ===
+    
+    /// Position where virtual reference switch activates (simulation only)
+    /// Default: 0.0 user units
+    #[serde(default)]
+    pub reference_switch_position: f64,
+    
+    /// Position where virtual K0 index pulse triggers (simulation only)
+    /// Default: 0.0 user units
+    #[serde(default)]
+    pub index_pulse_position: f64,
 }
 
 fn default_true() -> bool { true }

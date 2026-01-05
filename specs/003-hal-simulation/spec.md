@@ -1,4 +1,4 @@
-# Feature Specification: HAL Simulation Driver
+# Feature Specification: HAL Core + Simulation Driver
 
 **Feature Branch**: `003-hal-simulation`
 **Created**: 2025-12-05
@@ -12,15 +12,8 @@
 - Q: How should Slave axes couple to their Master axis? → A: **1:1 ratio with preserved offset** - Slave follows master's movement (delta), not absolute position. When coupled, the offset between master and slave is captured. From that point: `slave_position = master_position + captured_offset`. Config adds `coupling_offset` field. Movement is synchronized 1:1, but positions can differ.
 - Q: What value range and units should Analog I/O use in SHM? → A: **Dual representation** - Two registers per analog channel: (1) Normalized f64 0.0–1.0 (fundamental for control), (2) Scaled f64 in engineering units. Scaling computed from `min_value`, `max_value`, and `curve_type` (Linear|Parabolic|Cubic). If no scaling defined, both registers show identical values.
 - Q: What should be the initial state of axes when HAL starts? → A: **Position 0.0, unreferenced + state persistence** - First run: axes start at 0.0 with `Status.Referenced=false`. HAL persists state to file on shutdown and restores on startup (simulates absolute encoders / powered-off machine). Combines safety with realistic behavior.
-- Q: What referencing types should be supported? → A: **6 modes (0-5)** with full configuration:
-  - Mode 0: No referencing needed
-  - Mode 1: Move to reference switch, then find K0 (index pulse) as reference point
-  - Mode 2: Move to reference switch, use that position as reference
-  - Mode 3: Find K0 index pulse only, use as reference
-  - Mode 4: Like mode 1, but use limit switch instead of separate reference switch
-  - Mode 5: Like mode 2, but use limit switch instead of separate reference switch
-  - Config parameters: `referencing_required` (yes/perhaps/no), `referencing_mode` (0-5), `reference_switch` (DI number), `normally_closed_reference_switch` (bool), `negative_referencing_direction` (bool, default: yes), `referencing_speed` (user units/s), `show_k0_distance_error` (bool)
-- Q: Where should HAL state persistence file be stored? → A: **Configurable** - Add `state_file_path` to config for maximum flexibility in different deployment scenarios.
+- Q: What referencing types should be supported? → A: **6 modes (0-5)** - See FR-005 below for authoritative list. **Simulation behavior**: Virtual reference switches activate at configurable positions (`reference_switch_position` in axis config, default: 0.0). K0 index pulse is simulated at position 0.0 (or configurable `index_pulse_position`). The simulation triggers the switch/pulse when the axis passes these positions during referencing movement.
+- Q: Where should HAL state persistence file be stored? → A: **Configurable** - Add `state_file` to config for maximum flexibility in different deployment scenarios.
 
 ### Session 2025-12-09
 - Q: How should the HAL Simulation driver locate its configuration file? → A: **Command-line argument with default constant** - Use `--config <path>` arg. Default path defined as a constant in `evo_common` (e.g., `evo_common::config::DEFAULT_CONFIG_PATH`).
@@ -74,8 +67,9 @@ As a developer, I want to write to Digital/Analog Outputs in SHM and see them re
 
 **Acceptance Scenarios**:
 
-1. **Given** HAL is running, **When** I set Digital Output 1 to TRUE in SHM, **Then** the Simulation internal state for DO 1 becomes TRUE.
-2. **Given** HAL is running, **When** the Simulation logic toggles Digital Input 1 to TRUE, **Then** the SHM value for DI 1 becomes TRUE.
+1. **Given** HAL is running, **When** I set Digital Output 1 to TRUE in SHM, **Then** the Simulation internal state for DO 1 becomes TRUE (observable via `HalDriver::diagnostics()` or by reading DO-linked DI after configured delay).
+2. **Given** HAL is running, **When** the Simulation logic sets Digital Input 1 to TRUE (via linked reaction or test injection), **Then** the SHM DI 1 field reads TRUE within one cycle.
+3. **Given** a LinkedDigitalInput config linking DI 5 to DO 3 with 50ms delay, **When** DO 3 becomes TRUE, **Then** DI 5 becomes TRUE after 50ms (simulation-specific feature for testing valve/actuator feedback).
 
 ---
 
@@ -90,7 +84,7 @@ As a control engineer, I want to command an axis to move to a position via SHM a
 **Acceptance Scenarios**:
 
 1. **Given** Axis 1 is at position 0, **When** Target Position is set to 1000, **Then** Actual Position increases over multiple cycles until it reaches 1000.
-2. **Given** Axis 1 is moving, **When** Target Velocity is set to 0, **Then** Axis decelerates to a stop.
+2. **Given** Axis 1 is moving toward position 1000, **When** Target Position is set to current Actual Position (stop command), **Then** Axis decelerates to a stop at the new target. *(Note: velocity is derived from position delta, not directly commanded)*
 
 ---
 
@@ -117,7 +111,7 @@ As a safety engineer, I want the axis to stop immediately if the difference betw
 ### Functional Requirements
 
 - **FR-001**: HAL MUST load configuration from structured **TOML** files. The main config path SHALL be provided via command-line argument (e.g., `--config`), defaulting to a standard constant defined in `evo_common` if omitted. Configuration is split into:
-    - **Main machine config** (`machine.toml`): Optional `cycle_time_us` (defaults to `evo_common::prelude::DEFAULT_CYCLE_TIME_US` = 1000μs if omitted), Digital/Analog I/O definitions, list of axis file paths, `state_file`.
+    - **Main machine config** (`machine.toml`): Optional `cycle_time_us` (defaults to `evo_common::prelude::DEFAULT_CYCLE_TIME_US` = 1000μs if omitted; `DEFAULT_CYCLE_TIME` provides the same as `Duration` for convenience), Digital/Analog I/O definitions, list of axis file paths, `state_file`, optional `drivers` list (for future multi-driver support), and optional `driver_config` table (driver-specific settings keyed by driver name). For this feature, `--simulate` flag overrides any `drivers` list to use the simulation driver exclusively.
     - **Separate axis config files** (e.g., `axis_01.toml`, `axis_02.toml`): Each axis has its own TOML file referenced from main config. This allows extensive per-axis parameters and easy comparison between axes.
     - Supported axis types (defined in `evo::hal::config::AxisType`):
         - **Simple (0)**: On/off axis without position feedback. No motion parameters required.
@@ -128,8 +122,8 @@ As a safety engineer, I want the axis to stop immediately if the difference betw
 - **FR-001a**: HAL MUST validate all configuration values at startup and reject invalid configurations with specific error messages, including: negative/zero cycle times, negative/zero velocities or accelerations, counts exceeding system limits (>64 axes, >1024 IOs), duplicate names, invalid encoder resolutions, and master-slave relationships (master axis must exist, must not be a Slave type, must have lower index than slave). System limits SHALL be defined as constants in `evo_common::hal::consts` (imported as `evo::hal::consts`). Validation logic SHALL be implemented in `MachineConfig::validate()` method.
 - **FR-002**: HAL MUST initialize the Shared Memory (SHM) structure using the existing `evo_shared_memory` library, matching the configuration with a fixed-size layout (Max 64 Axes, Max 1024 DI, Max 1024 DO, Max 1024 AI, Max 1024 AO).
 - **FR-003**: HAL Driver Simulation MUST read "Command" values (Target Position [User Units], Command Flags [Enable, Reset], IO States) from SHM cyclically.
-- **FR-004**: HAL Driver Simulation MUST write "Status" values (Actual Position [User Units], Actual Velocity, Status Flags [Ready, Error], IO States) to SHM cyclically.
-- **FR-004a**: Analog I/O SHALL use **dual representation** in SHM - two registers per channel: (1) Normalized f64 (0.0–1.0, linear scale), (2) Scaled f64 (engineering units). Scaling is computed from `min_value`, `max_value`, and `curve_type` (Linear|Parabolic|Cubic). If no scaling config, both registers show identical values.
+- **FR-004**: HAL Driver Simulation MUST write "Status" values (Actual Position [User Units], Actual Velocity, Status Flags [Ready, Error, InPosition], IO States) to SHM cyclically. The `InPosition` flag SHALL be true when `|actual_position - target_position| <= in_position_window` (configurable per axis, default 0.01 user units).
+- **FR-004a**: Analog I/O SHALL use **dual representation** in SHM - two registers per channel: (1) Normalized f64 (0.0–1.0, linear scale), (2) Scaled f64 (engineering units). Scaling is computed from `min_value`, `max_value`, and `curve_type` (Linear|Parabolic|Cubic). Polynomial coefficients and inverse scaling algorithm are defined in [contracts/shm_layout.md](contracts/shm_layout.md). If no scaling config, both registers show identical values.
 - **FR-005**: HAL Driver Simulation MUST simulate axis physics:
     - Calculate required velocity to reach Target Position.
     - Apply Acceleration/Deceleration limits to current velocity.
@@ -150,6 +144,7 @@ As a safety engineer, I want the axis to stop immediately if the difference betw
 - **FR-010**: HAL Driver Simulation MUST handle system-level failures (SHM corruption, memory allocation failures) by logging clear error messages and terminating gracefully to allow clean restart without affecting other system components.
 - **FR-011**: HAL MUST persist axis state (positions, referenced status) to a file on shutdown and restore on startup. The state file path SHALL be configurable via `state_file` in config. On first run (no state file), axes start at position 0.0 with `Status.Referenced=false`. This simulates absolute encoder behavior across power cycles.
 - **FR-012**: Axes with `referencing_required=perhaps` SHALL use persisted position if available, otherwise require referencing. Axes with `referencing_required=yes` SHALL always require referencing regardless of persisted state.
+- **FR-013**: HAL Driver Simulation MUST NOT perform dynamic memory allocations (heap) during the real-time simulation cycle (inside `cycle()`). All memory MUST be pre-allocated during initialization.
 
 ### Key Entities
 

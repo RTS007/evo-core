@@ -58,7 +58,7 @@
 - [ ] T016 [P] Add ReferencingConfig struct in `evo_common/src/hal/config.rs`
 - [ ] T017 [P] Add DigitalIOConfig struct in `evo_common/src/hal/config.rs`
 - [ ] T018 [P] Add AnalogIOConfig and AnalogCurveType in `evo_common/src/hal/config.rs`
-- [ ] T019-test Write unit tests for MachineConfig::validate() covering all validation rules in `evo_common/src/hal/config.rs`
+- [ ] T019-test Write unit tests for MachineConfig::validate() covering all validation rules (including duplicate axis/IO names, invalid counts, master-slave relationships) in `evo_common/src/hal/config.rs`
 - [ ] T019 Implement `MachineConfig::validate()` method with all validation rules in `evo_common/src/hal/config.rs`
 - [ ] T020-test Write unit tests for AxisConfig::validate() in `evo_common/src/hal/config.rs`
 - [ ] T020 Implement `AxisConfig::validate()` method in `evo_common/src/hal/config.rs`
@@ -70,6 +70,7 @@
 - [ ] T022-test Write contract tests for HalShmData, HalShmHeader layout matching contracts/shm_layout.md
 - [ ] T022 Create `evo_hal/src/shm.rs` with HalShmData, HalShmHeader structs matching contracts/shm_layout.md
 - [ ] T023 Add AxisShmData struct with command/status sections in `evo_hal/src/shm.rs`
+- [ ] T024-test Write contract tests for AnalogShmData dual f64 layout matching contracts/shm_layout.md
 - [ ] T024 Add AnalogShmData struct (dual f64) in `evo_hal/src/shm.rs`
 - [ ] T025-test Write integration tests for SHM initialization using evo_shared_memory
 - [ ] T025 Implement SHM initialization using evo_shared_memory in `evo_hal/src/shm.rs`
@@ -104,6 +105,7 @@
 - [ ] T034-test [US1] Write unit tests for RT loop using cycle_time_us from config
 - [ ] T034 [US1] Implement basic RT loop in HalCore::run() using cycle_time_us from config in `evo_hal/src/core.rs`
 - [ ] T034a [US1] Implement RT mode auto-detection via sched_getscheduler() in `evo_hal/src/core.rs`
+- [ ] T076 [US1] Add timing violation detection and logging in RT loop
 - [ ] T035 [US1] Add tracing/logging setup in `evo_hal/src/main.rs`
 - [ ] T036 [US1] Implement graceful shutdown (SIGINT/SIGTERM handling) in `evo_hal/src/main.rs`
 
@@ -174,6 +176,7 @@
 - [ ] T056 [US3] Implement Slave axis coupling (1:1 ratio + captured offset) in AxisSimulator
 - [ ] T057-test [US3] Write unit tests for ReferencingStateMachine in `evo_hal/src/drivers/simulation/physics/referencing.rs`
 - [ ] T057 [US3] Create `evo_hal/src/drivers/simulation/physics/referencing.rs` with ReferencingStateMachine
+- [ ] T057a-test [US3] Write unit tests for virtual switch/index detection using reference_switch_position and index_pulse_position
 - [ ] T058-test [US3] Write unit tests for 6 referencing modes state machine
 - [ ] T058 [US3] Implement 6 referencing modes state machine in ReferencingStateMachine
 - [ ] T059 [US3] Implement referencing states (Unreferenced, SearchingSwitch, SearchingIndex, Referenced, Error)
@@ -230,7 +233,6 @@
 
 - [ ] T074 [P] Add comprehensive error messages for config validation failures
 - [ ] T075 [P] Add structured JSON logging mode (--json flag or config option)
-- [ ] T076 [P] Add timing violation detection and logging in RT loop
 - [ ] T077 [P] Add SHM version protocol (odd = write in progress) in `evo_hal/src/shm.rs`
 - [ ] T078 [P] Create example config files in `config/machine.toml`, `config/axes/axis_01.toml`, etc.
 - [ ] T079 Run quickstart.md validation - verify documented commands work
@@ -327,12 +329,12 @@ T053, T054, T055          # Axis type handlers
 | Phase | Tasks | Test Tasks | Parallel Tasks | Key Deliverable |
 |-------|-------|------------|----------------|-----------------|
 | 1. Setup | T001-T004 | 0 | 3 | Project structure |
-| 2. Foundational | T005-T027 | 10 | 14 | evo_common HAL types, SHM layout |
+| 2. Foundational | T005-T027 | 11 | 14 | evo_common HAL types, SHM layout |
 | 3. US1 Config+Start | T028-T041 | 11 | 4 | HAL starts with config |
 | 4. US2 I/O | T042-T048 | 5 | 0 | Digital/Analog I/O working |
-| 5. US3 Motion | T049-T061 | 10 | 5 | Axis physics simulation |
+| 5. US3 Motion | T049-T061 | 11 | 5 | Axis physics simulation |
 | 6. US4 Lag Error | T062-T066 | 3 | 0 | Safety feature |
 | 7. State Persistence | T067-T073 | 5 | 0 | Restart recovery |
 | 8. Polish | T074-T080 | 0 | 5 | Production quality |
-| **Total** | **81 impl** | **44 test** | **31 parallel** | **125 total tasks** |
+| **Total** | **81 impl** | **46 test** | **31 parallel** | **127 total tasks** |
 

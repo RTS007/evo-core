@@ -64,7 +64,7 @@ impl HalCore {
 
         let cycle_time = Duration::from_micros(config.cycle_time_us as u64);
         
-        // Create module status publisher with canonical service name (ignore TOML override)
+        // Create module status publisher with canonical service name
         let module_status = ModuleStatusPublisher::new(HAL_SERVICE_NAME);
         
         info!(

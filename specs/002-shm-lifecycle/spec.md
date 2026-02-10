@@ -1,8 +1,10 @@
 # Feature Specification: Shared Memory Lifecycle
 
+> ⚠️ **SUPERSEDED**: This specification (broadcast model: single-writer, many-readers) has been superseded by the **P2P (Point-to-Point) model** defined in [005-control-unit/spec.md](../005-control-unit/spec.md) §FR-130 series. The broadcast model is no longer the active architecture. All new development MUST use the P2P API from `evo_shared_memory`. See 005-control-unit/spec.md §Appendix: P2P SHM Migration Impact for the full delta.
+
 **Feature Branch**: `002-shm-lifecycle`  
 **Created**: 28 November 2025  
-**Status**: Draft  
+**Status**: Superseded (by 005-control-unit §FR-130, 2026-02-09)  
 **Input**: User description: "Shared Memory lifecycle (single-writer segments, lock-free reads)"
 
 ## Clarifications

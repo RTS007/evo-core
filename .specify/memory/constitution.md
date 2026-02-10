@@ -269,4 +269,10 @@ Enforcement Tools:
 - CI policy checks: principle tags present, latency tests exist for modified RT components, static analysis clean.
 - Pre-commit hooks: forbid dynamic allocation markers in RT directories after initialization phase.
 
+## Implementation Behavior
+- When implement, continue through ALL tasks automatically
+- Do NOT stop between tasks or phases
+- Mark tasks as completed [X] and proceed immediately to next task
+- Only stop if there's a critical error or explicit user intervention
+
 **Version**: 1.0.0 | **Ratified**: 2025-09-29 | **Last Amended**: 2025-09-29

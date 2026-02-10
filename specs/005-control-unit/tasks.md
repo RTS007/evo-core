@@ -288,30 +288,30 @@
 
 **Purpose**: Observability, performance validation, documentation
 
-- [ ] T084 [P] Implement evo_cu_mqt snapshot writer — populate `CuToMqtSegment` fields (machine_state, safety_state, per-axis `AxisStateSnapshot` including all state enums, error bitflags, position/velocity/lag/torque) from runtime state every N cycles per FR-134 in `evo_control_unit/src/shm/writer.rs`
-- [ ] T085 [P] Implement evo_cu_mqt update rate throttling — write diagnostic segment every N cycles (configurable, default: 10 = 10ms) instead of every cycle per FR-134 in `evo_control_unit/src/shm/writer.rs`
-- [ ] T086 [P] Implement optional segment dynamic connect/disconnect — detect when evo_re_cu or evo_rpc_cu appear/disappear, connect on next cycle, release source locks on staleness per FR-139 in `evo_control_unit/src/shm/segments.rs`
-- [ ] T087 [P] Create criterion benchmark `evo_control_unit/benches/cycle_benchmark.rs` — measure full cycle time for 8-axis and 64-axis configurations, validate <1ms per SC-001
-- [ ] T088 [P] Create criterion benchmark `evo_control_unit/benches/pid_benchmark.rs` — measure control engine throughput for single axis, validate ~0.4µs per axis per research.md Topic 11
-- [ ] T089 [P] Create minimal integration test `evo_control_unit/tests/integration/startup.rs` — config load → SHM connect → Starting → Idle transition with mock evo_hal_cu
-- [ ] T090 [P] Create integration test `evo_control_unit/tests/integration/safety_stop.rs` — trigger CRITICAL error → SAFETY_STOP → verify per-axis SafeStopCategory execution → recovery
-- [ ] T091 [P] Create integration test `evo_control_unit/tests/integration/coupling.rs` — master + 2 slaves → sync → move → fault cascade
-- [ ] T092 Create reference test config files `config/test_8axis.toml` + `config/test_io.toml` per quickstart.md (8 axes, mixed params, coupling pair, brake+tailstock+guard; io.toml with all required roles) for SC-002/SC-004 benchmarks
-- [ ] T093 Run quickstart.md validation — verify build, run, test commands all work; update quickstart.md if paths or commands changed
+- [x] T084 [P] Implement evo_cu_mqt snapshot writer — populate `CuToMqtSegment` fields (machine_state, safety_state, per-axis `AxisStateSnapshot` including all state enums, error bitflags, position/velocity/lag/torque) from runtime state every N cycles per FR-134 in `evo_control_unit/src/shm/writer.rs`
+- [x] T085 [P] Implement evo_cu_mqt update rate throttling — write diagnostic segment every N cycles (configurable, default: 10 = 10ms) instead of every cycle per FR-134 in `evo_control_unit/src/shm/writer.rs`
+- [x] T086 [P] Implement optional segment dynamic connect/disconnect — detect when evo_re_cu or evo_rpc_cu appear/disappear, connect on next cycle, release source locks on staleness per FR-139 in `evo_control_unit/src/shm/segments.rs`
+- [x] T087 [P] Create criterion benchmark `evo_control_unit/benches/cycle_benchmark.rs` — measure full cycle time for 8-axis and 64-axis configurations, validate <1ms per SC-001
+- [x] T088 [P] Create criterion benchmark `evo_control_unit/benches/pid_benchmark.rs` — measure control engine throughput for single axis, validate ~0.4µs per axis per research.md Topic 11
+- [x] T089 [P] Create minimal integration test `evo_control_unit/tests/integration/startup.rs` — config load → SHM connect → Starting → Idle transition with mock evo_hal_cu
+- [x] T090 [P] Create integration test `evo_control_unit/tests/integration/safety_stop.rs` — trigger CRITICAL error → SAFETY_STOP → verify per-axis SafeStopCategory execution → recovery
+- [x] T091 [P] Create integration test `evo_control_unit/tests/integration/coupling.rs` — master + 2 slaves → sync → move → fault cascade
+- [x] T092 Create reference test config files `config/test_8axis.toml` + `config/test_io.toml` per quickstart.md (8 axes, mixed params, coupling pair, brake+tailstock+guard; io.toml with all required roles) for SC-002/SC-004 benchmarks
+- [x] T093 Run quickstart.md validation — verify build, run, test commands all work; update quickstart.md if paths or commands changed
 
 ### Success Criteria Validation (F15)
 
-- [ ] T094 [P] Create accuracy validation test `evo_control_unit/tests/integration/control_accuracy.rs` — step response with mock HAL, verify steady-state error < 0.1mm for reference axis config per SC-004
-- [ ] T095 [P] Create recovery timing benchmark `evo_control_unit/benches/recovery_benchmark.rs` — measure SYSTEM_ERROR→Idle recovery latency, validate <100ms per SC-009
-- [ ] T096 Create startup timing test `evo_control_unit/tests/integration/startup_timing.rs` — measure POWER_OFF→STANDBY for 8-axis reference config, validate <500ms per SC-002
-- [ ] T097 [P] Create 24-hour soak test `evo_control_unit/tests/integration/soak_24h.rs` — run continuous motion profiles (position+velocity+homing cycles) with simulated HAL for 24 hours, verify zero false-positive SAFETY_STOP triggers and stable memory/timing per SC-008
+- [x] T094 [P] Create accuracy validation test `evo_control_unit/tests/integration/control_accuracy.rs` — step response with mock HAL, verify steady-state error < 0.1mm for reference axis config per SC-004
+- [x] T095 [P] Create recovery timing benchmark `evo_control_unit/benches/recovery_benchmark.rs` — measure SYSTEM_ERROR→Idle recovery latency, validate <100ms per SC-009
+- [x] T096 Create startup timing test `evo_control_unit/tests/integration/startup_timing.rs` — measure POWER_OFF→STANDBY for 8-axis reference config, validate <500ms per SC-002
+- [x] T097 [P] Create 24-hour soak test `evo_control_unit/tests/integration/soak_24h.rs` — run continuous motion profiles (position+velocity+homing cycles) with simulated HAL for 24 hours, verify zero false-positive SAFETY_STOP triggers and stable memory/timing per SC-008
 
 ### Hot-Reload Implementation (FR-144–FR-147)
 
-- [ ] T098 Implement shadow-config parser — during SAFETY_STOP, read config file into temporary `CuMachineConfig`, run full validation (axis ID uniqueness, coupling graph acyclicity, parameter bounds, reloadable-scope check) per FR-146 in `evo_control_unit/src/config.rs`
-- [ ] T099 Implement atomic config swap with rollback — if validation passes: atomic pointer swap `active_config ← shadow_config`; if fails: discard shadow, report `ERR_RELOAD_VALIDATION_FAILED` via `evo_cu_mqt`; enforce ≤120ms total duration per FR-146/FR-147 in `evo_control_unit/src/config.rs`
-- [ ] T100 Implement `RELOAD_CONFIG` command handling — accept from `evo_rpc_cu` (`RpcCommandType::ReloadConfig`), reject with `ERR_RELOAD_DENIED` if `SafetyState != SafetyStop`, report reload success via updated `evo_cu_mqt` snapshot per FR-145/FR-147 in `evo_control_unit/src/command/arbitration.rs`
-- [ ] T101 [P] Create hot-reload integration test `evo_control_unit/tests/integration/hot_reload.rs` — trigger SAFETY_STOP → send RELOAD_CONFIG with valid/invalid configs → verify atomic swap, rollback on failure, ERR_RELOAD_DENIED outside E-STOP, reload success reflected in `evo_cu_mqt` snapshot per FR-144–FR-147
+- [x] T098 Implement shadow-config parser — during SAFETY_STOP, read config file into temporary `CuMachineConfig`, run full validation (axis ID uniqueness, coupling graph acyclicity, parameter bounds, reloadable-scope check) per FR-146 in `evo_control_unit/src/config.rs`
+- [x] T099 Implement atomic config swap with rollback — if validation passes: atomic pointer swap `active_config ← shadow_config`; if fails: discard shadow, report `ERR_RELOAD_VALIDATION_FAILED` via `evo_cu_mqt`; enforce ≤120ms total duration per FR-146/FR-147 in `evo_control_unit/src/config.rs`
+- [x] T100 Implement `RELOAD_CONFIG` command handling — accept from `evo_rpc_cu` (`RpcCommandType::ReloadConfig`), reject with `ERR_RELOAD_DENIED` if `SafetyState != SafetyStop`, report reload success via updated `evo_cu_mqt` snapshot per FR-145/FR-147 in `evo_control_unit/src/command/arbitration.rs`
+- [x] T101 [P] Create hot-reload integration test `evo_control_unit/tests/integration/hot_reload.rs` — trigger SAFETY_STOP → send RELOAD_CONFIG with valid/invalid configs → verify atomic swap, rollback on failure, ERR_RELOAD_DENIED outside E-STOP, reload success reflected in `evo_cu_mqt` snapshot per FR-144–FR-147
 
 ---
 

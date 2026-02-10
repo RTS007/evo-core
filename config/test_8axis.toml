@@ -1,0 +1,331 @@
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║  Machine Configuration — 8-Axis Test Reference (SC-002/SC-004)           ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+#
+# 8 axes: X, Y, Z (linear), A (rotary), B (rotary), C (rotary),
+#          Spindle (high speed), Tailstock (coupled to Z).
+# Coupling pair: axis 8 (Tailstock) slave to axis 3 (Z).
+# Axes 1-4 have brakes, axis 3 has tailstock + guard.
+
+[global_safety]
+default_safe_stop = "SS1"
+safety_stop_timeout = 5.0
+recovery_authorization_required = true
+
+[service_bypass]
+bypass_axes = [1, 2, 3, 4, 5, 6, 7, 8]
+max_service_velocity = 50.0
+
+# ─── Axis 1: X-Axis (Linear) ───────────────────────────────────────
+
+[[axes]]
+axis_id = 1
+name = "X-Axis"
+max_velocity = 500.0
+safe_reduced_speed_limit = 50.0
+min_pos = -100.0
+max_pos = 1000.0
+in_position_window = 0.05
+
+[axes.control]
+kp = 100.0
+ki = 20.0
+kd = 0.5
+tf = 0.001
+tt = 0.01
+kvff = 0.8
+kaff = 0.001
+friction = 0.5
+jn = 0.01
+bn = 0.001
+gdob = 200.0
+f_notch = 800.0
+bw_notch = 50.0
+flp = 500.0
+out_max = 100.0
+lag_error_limit = 0.5
+lag_policy = "Unwanted"
+
+[axes.safe_stop]
+category = "SS1"
+max_decel_safe = 10000.0
+sto_brake_delay = 0.1
+ss2_holding_torque = 20.0
+
+[axes.homing]
+method = "HomeSensor"
+speed = 20.0
+torque_limit = 30.0
+timeout = 30.0
+approach_direction = "Positive"
+
+[axes.brake]
+do_brake = "BrakeOut1"
+di_released = "BrakeIn1"
+release_timeout = 2.0
+engage_timeout = 1.0
+
+# ─── Axis 2: Y-Axis (Linear) ───────────────────────────────────────
+
+[[axes]]
+axis_id = 2
+name = "Y-Axis"
+max_velocity = 500.0
+safe_reduced_speed_limit = 50.0
+min_pos = -100.0
+max_pos = 600.0
+in_position_window = 0.05
+
+[axes.control]
+kp = 100.0
+ki = 20.0
+kd = 0.5
+tf = 0.001
+tt = 0.01
+kvff = 0.8
+kaff = 0.001
+friction = 0.4
+out_max = 100.0
+lag_error_limit = 0.5
+lag_policy = "Unwanted"
+
+[axes.safe_stop]
+category = "SS1"
+max_decel_safe = 10000.0
+
+[axes.homing]
+method = "HomeSensor"
+speed = 20.0
+torque_limit = 30.0
+timeout = 30.0
+approach_direction = "Negative"
+
+[axes.brake]
+do_brake = "BrakeOut2"
+di_released = "BrakeIn2"
+release_timeout = 2.0
+engage_timeout = 1.0
+
+# ─── Axis 3: Z-Axis (Linear, with tailstock + guard) ───────────────
+
+[[axes]]
+axis_id = 3
+name = "Z-Axis"
+max_velocity = 300.0
+safe_reduced_speed_limit = 30.0
+min_pos = 0.0
+max_pos = 500.0
+in_position_window = 0.05
+
+[axes.control]
+kp = 80.0
+ki = 15.0
+kd = 0.4
+tf = 0.001
+tt = 0.01
+kvff = 0.7
+kaff = 0.001
+friction = 0.6
+jn = 0.02
+bn = 0.002
+gdob = 150.0
+out_max = 100.0
+lag_error_limit = 1.0
+lag_policy = "Unwanted"
+
+[axes.safe_stop]
+category = "SS2"
+max_decel_safe = 8000.0
+ss2_holding_torque = 25.0
+
+[axes.homing]
+method = "LimitSwitch"
+speed = 10.0
+torque_limit = 40.0
+timeout = 45.0
+approach_direction = "Negative"
+limit_direction = -1
+
+[axes.brake]
+do_brake = "BrakeOut3"
+di_released = "BrakeIn3"
+release_timeout = 2.0
+engage_timeout = 1.0
+
+[axes.tailstock]
+tailstock_type = "Standard"
+di_closed = "TailClosed3"
+di_open = "TailOpen3"
+
+[axes.guard]
+di_closed = "GuardClosed3"
+di_locked = "GuardLocked3"
+secure_speed = 10.0
+open_delay = 2.0
+
+# ─── Axis 4: A-Axis (Rotary) ───────────────────────────────────────
+
+[[axes]]
+axis_id = 4
+name = "A-Axis"
+max_velocity = 360.0
+safe_reduced_speed_limit = 36.0
+min_pos = 0.0
+max_pos = 360.0
+in_position_window = 0.01
+
+[axes.control]
+kp = 60.0
+ki = 10.0
+kd = 0.3
+tf = 0.001
+tt = 0.01
+kvff = 0.6
+out_max = 50.0
+lag_error_limit = 0.2
+lag_policy = "Critical"
+
+[axes.safe_stop]
+category = "SS1"
+max_decel_safe = 15000.0
+
+[axes.homing]
+method = "IndexPulse"
+speed = 10.0
+torque_limit = 25.0
+timeout = 60.0
+approach_direction = "Positive"
+sensor_role = "Ref4"
+index_role = "Index4"
+
+[axes.brake]
+do_brake = "BrakeOut4"
+di_released = "BrakeIn4"
+release_timeout = 2.0
+engage_timeout = 1.0
+
+# ─── Axis 5: B-Axis (Rotary) ───────────────────────────────────────
+
+[[axes]]
+axis_id = 5
+name = "B-Axis"
+max_velocity = 180.0
+safe_reduced_speed_limit = 18.0
+min_pos = -90.0
+max_pos = 90.0
+in_position_window = 0.01
+
+[axes.control]
+kp = 50.0
+ki = 8.0
+kd = 0.2
+tf = 0.001
+tt = 0.01
+out_max = 50.0
+lag_error_limit = 0.3
+lag_policy = "Unwanted"
+
+[axes.safe_stop]
+category = "SS1"
+max_decel_safe = 12000.0
+
+[axes.homing]
+method = "Absolute"
+zero_offset = 0.0
+
+# ─── Axis 6: C-Axis (Rotary) ───────────────────────────────────────
+
+[[axes]]
+axis_id = 6
+name = "C-Axis"
+max_velocity = 360.0
+safe_reduced_speed_limit = 36.0
+min_pos = 0.0
+max_pos = 360.0
+in_position_window = 0.01
+
+[axes.control]
+kp = 50.0
+ki = 8.0
+kd = 0.2
+tf = 0.001
+tt = 0.01
+out_max = 50.0
+lag_error_limit = 0.3
+lag_policy = "Unwanted"
+
+[axes.safe_stop]
+category = "SS1"
+max_decel_safe = 12000.0
+
+[axes.homing]
+method = "NoHoming"
+
+# ─── Axis 7: Spindle (High-Speed Rotary) ───────────────────────────
+
+[[axes]]
+axis_id = 7
+name = "Spindle"
+max_velocity = 24000.0
+safe_reduced_speed_limit = 1200.0
+in_position_window = 1.0
+
+[axes.control]
+kp = 200.0
+ki = 50.0
+kd = 1.0
+tf = 0.0005
+tt = 0.005
+kvff = 0.95
+kaff = 0.002
+friction = 2.0
+jn = 0.05
+bn = 0.01
+gdob = 500.0
+f_notch = 1200.0
+bw_notch = 100.0
+flp = 800.0
+out_max = 200.0
+lag_error_limit = 5.0
+lag_policy = "Neutral"
+
+[axes.safe_stop]
+category = "SS1"
+max_decel_safe = 50000.0
+
+[axes.homing]
+method = "NoHoming"
+
+# ─── Axis 8: Tailstock Slave (Coupled to Z) ────────────────────────
+
+[[axes]]
+axis_id = 8
+name = "Tailstock"
+max_velocity = 300.0
+safe_reduced_speed_limit = 30.0
+min_pos = 0.0
+max_pos = 500.0
+in_position_window = 0.1
+
+[axes.control]
+kp = 80.0
+ki = 15.0
+kd = 0.4
+tf = 0.001
+tt = 0.01
+kvff = 0.7
+out_max = 100.0
+lag_error_limit = 1.0
+lag_policy = "Unwanted"
+
+[axes.safe_stop]
+category = "SS2"
+max_decel_safe = 8000.0
+
+[axes.homing]
+method = "NoHoming"
+
+[axes.coupling]
+master_axis = 3
+slave_axes = []
+coupling_ratio = 1.0

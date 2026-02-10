@@ -102,8 +102,8 @@ cargo test -p evo_control_unit -- --nocapture
 cargo test -p evo_control_unit -- state_machine::tests
 cargo test -p evo_control_unit -- control_engine::tests
 
-# Integration tests (requires evo_shared_memory)
-cargo test -p evo_control_unit --test integration
+# Integration tests
+cargo test -p evo_control_unit --test integration_tests
 
 # All workspace tests (includes evo_common, evo_shared_memory)
 cargo test --workspace
@@ -127,12 +127,10 @@ cargo bench -p evo_control_unit -- pid_benchmark
 ### Minimal machine.toml
 
 ```toml
-[control_unit]
-cycle_time_us = 1000      # 1 ms cycle
-max_axes = 8
-
 [global_safety]
 default_safe_stop = "SS1"
+safety_stop_timeout = 5.0
+recovery_authorization_required = true
 
 [[axes]]
 axis_id = 1
@@ -232,12 +230,12 @@ evo_control_unit/
 │   ├── cycle_benchmark.rs         # Full cycle timing measurement
 │   └── pid_benchmark.rs           # Control engine throughput
 └── tests/
-    ├── integration/
-    │   ├── startup.rs             # Config load → Idle transition
-    │   ├── safety_stop.rs         # CRITICAL error → SAFETY_STOP → recovery
-    │   └── coupling.rs            # Master-slave sync and cascade
-    └── regression/
-        └── sc_benchmarks.rs       # SC-002/SC-004 reference config tests
+    ├── integration_tests.rs       # Integration test entry point
+    └── integration/
+        ├── mod.rs                 # Integration module root
+        ├── startup.rs             # Config load → Idle transition + ref config
+        ├── safety_stop.rs         # CRITICAL error → SAFETY_STOP → recovery
+        └── coupling.rs            # Master-slave sync and cascade
 ```
 
 ---

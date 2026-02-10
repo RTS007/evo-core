@@ -25,6 +25,8 @@
 //! ```
 
 pub mod config;
+pub mod control_unit;
 pub mod hal;
+pub mod io;
 pub mod prelude;
 pub mod shm;

@@ -1,0 +1,14 @@
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║  Control Unit Configuration — 8-Axis Test Reference (SC-002/SC-004)      ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+
+cycle_time_us = 1000           # 1 ms RT cycle
+max_axes = 8
+machine_config_path = "config/test_8axis.toml"
+io_config_path = "config/test_io.toml"
+
+manual_timeout = 30.0          # Manual → Idle timeout [s]
+hal_stale_threshold = 3        # HAL heartbeat miss → SYSTEM_ERROR
+re_stale_threshold = 1000      # RE heartbeat miss → release source lock
+rpc_stale_threshold = 1000     # RPC heartbeat miss → release source lock
+mqt_update_interval = 10       # Diagnostic write every 10 cycles (10ms)

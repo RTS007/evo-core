@@ -7,48 +7,8 @@
 use evo_common::shm::p2p::{ModuleAbbrev, ShmError, TypedP2pReader, TypedP2pWriter};
 use evo_common::shm::segments::{
     CuToHalSegment, CuToMqtSegment, CuToReSegment, HalToCuSegment, ReToCuSegment,
-    RpcToCuSegment,
+    RpcToCuSegment, SEG_CU_HAL, SEG_CU_MQT, SEG_CU_RE, SEG_HAL_CU, SEG_RE_CU, SEG_RPC_CU,
 };
-
-// Re-export segment types for convenience.
-pub use evo_common::shm::segments::{
-    CuToHalSegment as CuToHalPayload, CuToMqtSegment as CuToMqtPayload,
-    CuToReSegment as CuToRePayload, HalToCuSegment as HalToCuPayload,
-    ReToCuSegment as ReToCuPayload, RpcToCuSegment as RpcToCuPayload,
-};
-
-// Re-export segment name constants from evo_common.
-pub use evo_common::shm::segments::{
-    SEG_CU_HAL, SEG_CU_MQT, SEG_CU_RE, SEG_HAL_CU, SEG_RE_CU, SEG_RPC_CU,
-};
-
-// ─── Error Type ─────────────────────────────────────────────────────
-
-/// Errors that can occur during segment setup or runtime I/O.
-///
-/// Thin wrapper around `ShmError` for backward compatibility with
-/// CU code that matches on `SegmentError` variants.
-#[derive(Debug)]
-pub enum SegmentError {
-    /// P2P shared memory error (passthrough from evo_common).
-    Shm(ShmError),
-}
-
-impl std::fmt::Display for SegmentError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Shm(e) => write!(f, "SHM error: {e}"),
-        }
-    }
-}
-
-impl std::error::Error for SegmentError {}
-
-impl From<ShmError> for SegmentError {
-    fn from(e: ShmError) -> Self {
-        Self::Shm(e)
-    }
-}
 
 // ─── Staleness Thresholds ───────────────────────────────────────────
 
@@ -107,7 +67,7 @@ impl CuSegments {
     /// # Errors
     /// - HAL→CU is required; failure to attach is a fatal error.
     /// - RE→CU and RPC→CU are optional; `SegmentNotFound` is not an error.
-    pub fn init(thresholds: &SegmentThresholds) -> Result<Self, SegmentError> {
+    pub fn init(thresholds: &SegmentThresholds) -> Result<Self, ShmError> {
         // ── Create outbound writer segments ──
         let cu_to_hal = TypedP2pWriter::<CuToHalSegment>::create(
             SEG_CU_HAL,
@@ -134,14 +94,14 @@ impl CuSegments {
             match TypedP2pReader::<ReToCuSegment>::attach(SEG_RE_CU, thresholds.re_stale) {
                 Ok(r) => Some(r),
                 Err(ShmError::SegmentNotFound { .. }) => None,
-                Err(e) => return Err(e.into()),
+                Err(e) => return Err(e),
             };
 
         let rpc_to_cu =
             match TypedP2pReader::<RpcToCuSegment>::attach(SEG_RPC_CU, thresholds.rpc_stale) {
                 Ok(r) => Some(r),
                 Err(ShmError::SegmentNotFound { .. }) => None,
-                Err(e) => return Err(e.into()),
+                Err(e) => return Err(e),
             };
 
         Ok(Self {
@@ -155,7 +115,7 @@ impl CuSegments {
     }
 
     /// Attempt to late-attach the RE→CU segment (if RE started after CU).
-    pub fn try_attach_re(&mut self, stale_threshold: u32) -> Result<bool, SegmentError> {
+    pub fn try_attach_re(&mut self, stale_threshold: u32) -> Result<bool, ShmError> {
         if self.re_to_cu.is_some() {
             return Ok(true);
         }
@@ -165,12 +125,12 @@ impl CuSegments {
                 Ok(true)
             }
             Err(ShmError::SegmentNotFound { .. }) => Ok(false),
-            Err(e) => Err(e.into()),
+            Err(e) => Err(e),
         }
     }
 
     /// Attempt to late-attach the RPC→CU segment (if API started after CU).
-    pub fn try_attach_rpc(&mut self, stale_threshold: u32) -> Result<bool, SegmentError> {
+    pub fn try_attach_rpc(&mut self, stale_threshold: u32) -> Result<bool, ShmError> {
         if self.rpc_to_cu.is_some() {
             return Ok(true);
         }
@@ -180,7 +140,7 @@ impl CuSegments {
                 Ok(true)
             }
             Err(ShmError::SegmentNotFound { .. }) => Ok(false),
-            Err(e) => Err(e.into()),
+            Err(e) => Err(e),
         }
     }
 }

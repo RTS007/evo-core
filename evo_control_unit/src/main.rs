@@ -142,17 +142,15 @@ fn adapt_full_config(
     full: &evo_common::config::FullConfig,
     io_registry: Option<IoRegistry>,
 ) -> Result<LoadedConfig, Box<dyn std::error::Error>> {
-    use evo_common::consts::{
-        CYCLE_TIME_US, HAL_STALE_THRESHOLD_DEFAULT, MANUAL_TIMEOUT_DEFAULT,
-        MQT_UPDATE_INTERVAL_DEFAULT, NON_RT_STALE_THRESHOLD_DEFAULT,
-    };
     use evo_common::control_unit::config::{
-        ControlUnitConfig, CuAxisConfig, CuMachineConfig,
+        ControlUnitConfig, CuAxisConfig, CuMachineConfig, HAL_STALE_THRESHOLD_DEFAULT,
+        MANUAL_TIMEOUT_DEFAULT, MQT_UPDATE_INTERVAL_DEFAULT, NON_RT_STALE_THRESHOLD_DEFAULT,
     };
+    use evo_common::config::DEFAULT_CYCLE_TIME_US;
 
     // Build ControlUnitConfig from defaults.
     let cu_config = ControlUnitConfig {
-        cycle_time_us: CYCLE_TIME_US as u32,
+        cycle_time_us: DEFAULT_CYCLE_TIME_US,
         max_axes: full.axes.len() as u8,
         machine_config_path: String::new(), // Not used in unified mode
         io_config_path: String::new(),      // Not used in unified mode

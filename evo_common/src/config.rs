@@ -15,7 +15,14 @@
 //! println!("Axes: {}", full.axes.len());
 //! ```
 
+use crate::consts::{
+    MAX_ACCELERATION, MAX_HOMING_SPEED, MAX_HOMING_TIMEOUT, MAX_KD, MAX_KI, MAX_KP,
+    MAX_LAG_ERROR, MAX_OUT_MAX, MAX_POSITION_RANGE, MAX_SAFE_DECEL, MAX_VELOCITY, MIN_KD,
+    MIN_KI, MIN_KP,
+};
 use serde::{Deserialize, Serialize};
+use std::path::{Path, PathBuf};
+use thiserror::Error;
 
 /// Log level for configuration (replaces `log::Level`).
 ///
@@ -34,8 +41,6 @@ pub enum LogLevel {
     /// Error-level verbosity.
     Error,
 }
-use std::path::{Path, PathBuf};
-use thiserror::Error;
 
 /// Error type for configuration loading operations.
 ///
@@ -175,44 +180,15 @@ pub trait ConfigLoader: Sized + serde::de::DeserializeOwned {
 // This allows any serde-deserializable struct to use ConfigLoader.
 impl<T: serde::de::DeserializeOwned> ConfigLoader for T {}
 
-// ─── Numeric Bounds Constants (FR-054) ─────────────────────────────
-
-/// Minimum Kp gain value.
-pub const MIN_KP: f64 = 0.0;
-/// Maximum Kp gain value.
-pub const MAX_KP: f64 = 10_000.0;
-/// Minimum Ki gain value.
-pub const MIN_KI: f64 = 0.0;
-/// Maximum Ki gain value.
-pub const MAX_KI: f64 = 10_000.0;
-/// Minimum Kd gain value.
-pub const MIN_KD: f64 = 0.0;
-/// Maximum Kd gain value.
-pub const MAX_KD: f64 = 1_000.0;
-/// Maximum velocity (mm/s or deg/s).
-pub const MAX_VELOCITY: f64 = 100_000.0;
-/// Maximum acceleration (mm/s² or deg/s²).
-pub const MAX_ACCELERATION: f64 = 1_000_000.0;
-/// Minimum cycle time in microseconds.
-pub const MIN_CYCLE_TIME_US: u32 = 100;
-/// Maximum cycle time in microseconds.
-pub const MAX_CYCLE_TIME_US: u32 = 100_000;
-/// Maximum axis count.
-pub const MAX_AXIS_COUNT: usize = crate::consts::MAX_AXES as usize;
-/// Maximum position range (absolute value).
-pub const MAX_POSITION_RANGE: f64 = 1_000_000.0;
-/// Maximum out_max control output.
-pub const MAX_OUT_MAX: f64 = 1_000.0;
-/// Maximum lag error limit.
-pub const MAX_LAG_ERROR: f64 = 100.0;
-/// Maximum homing speed.
-pub const MAX_HOMING_SPEED: f64 = 10_000.0;
-/// Maximum homing timeout.
-pub const MAX_HOMING_TIMEOUT: f64 = 300.0;
-/// Maximum safe deceleration.
-pub const MAX_SAFE_DECEL: f64 = 1_000_000.0;
-
 // ─── WatchdogConfig ────────────────────────────────────────────────
+
+/// Default configuration directory path.
+pub const DEFAULT_CONFIG_PATH: &str = "/etc/evo/config";
+/// Default state file name (HAL persistent state).
+pub const DEFAULT_STATE_FILE: &str = "hal_state";
+
+/// Default cycle time in microseconds for TOML-loaded configs.
+pub const DEFAULT_CYCLE_TIME_US: u32 = 1000;
 
 fn default_max_restarts() -> u32 {
     5
@@ -677,11 +653,11 @@ pub fn load_config_dir(path: &Path) -> Result<FullConfig, ConfigError> {
     let axes = discover_axis_files(path)?;
 
     // 4. Validate global constraints.
-    if axes.len() > MAX_AXIS_COUNT {
+    if axes.len() > crate::consts::MAX_AXES as usize {
         return Err(ConfigError::ValidationError(format!(
             "too many axes: {} > {}",
             axes.len(),
-            MAX_AXIS_COUNT
+            crate::consts::MAX_AXES
         )));
     }
 
@@ -721,7 +697,11 @@ fn load_toml_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, Conf
 /// Returns a sorted vector of axis configs (sorted by NN).
 pub fn discover_axis_files(dir: &Path) -> Result<Vec<NewAxisConfig>, ConfigError> {
     let entries = std::fs::read_dir(dir).map_err(|e| {
-        ConfigError::ParseError(format!("cannot read config directory {}: {}", dir.display(), e))
+        ConfigError::ParseError(format!(
+            "cannot read config directory {}: {}",
+            dir.display(),
+            e
+        ))
     })?;
 
     let mut axis_files: Vec<(u8, PathBuf, String)> = Vec::new(); // (NN, path, filename)
@@ -805,11 +785,12 @@ fn validate_machine_config(cfg: &NewMachineConfig) -> Result<(), ConfigError> {
             "global_safety.safety_stop_timeout must be > 0".to_string(),
         ));
     }
-    if cfg.service_bypass.max_service_velocity <= 0.0 || cfg.service_bypass.max_service_velocity > MAX_VELOCITY {
+    if cfg.service_bypass.max_service_velocity <= 0.0
+        || cfg.service_bypass.max_service_velocity > MAX_VELOCITY
+    {
         return Err(ConfigError::ValidationError(format!(
             "service_bypass.max_service_velocity={} out of range (0, {}]",
-            cfg.service_bypass.max_service_velocity,
-            MAX_VELOCITY
+            cfg.service_bypass.max_service_velocity, MAX_VELOCITY
         )));
     }
     Ok(())
@@ -825,11 +806,21 @@ fn validate_axis_bounds(axis: &NewAxisConfig, fname: &str) -> Result<(), ConfigE
 
     let k = &axis.kinematics;
     if k.max_velocity <= 0.0 || k.max_velocity > MAX_VELOCITY {
-        return Err(ctx("kinematics.max_velocity", k.max_velocity, 0.0, MAX_VELOCITY));
+        return Err(ctx(
+            "kinematics.max_velocity",
+            k.max_velocity,
+            0.0,
+            MAX_VELOCITY,
+        ));
     }
     if let Some(ma) = k.max_acceleration {
         if ma <= 0.0 || ma > MAX_ACCELERATION {
-            return Err(ctx("kinematics.max_acceleration", ma, 0.0, MAX_ACCELERATION));
+            return Err(ctx(
+                "kinematics.max_acceleration",
+                ma,
+                0.0,
+                MAX_ACCELERATION,
+            ));
         }
     }
     if k.min_pos >= k.max_pos {
@@ -858,7 +849,12 @@ fn validate_axis_bounds(axis: &NewAxisConfig, fname: &str) -> Result<(), ConfigE
         return Err(ctx("control.out_max", c.out_max, 0.0, MAX_OUT_MAX));
     }
     if c.lag_error_limit <= 0.0 || c.lag_error_limit > MAX_LAG_ERROR {
-        return Err(ctx("control.lag_error_limit", c.lag_error_limit, 0.0, MAX_LAG_ERROR));
+        return Err(ctx(
+            "control.lag_error_limit",
+            c.lag_error_limit,
+            0.0,
+            MAX_LAG_ERROR,
+        ));
     }
     let valid_policies = ["Unwanted", "Warning", "Error"];
     if !valid_policies.contains(&c.lag_policy.as_str()) {
@@ -877,7 +873,12 @@ fn validate_axis_bounds(axis: &NewAxisConfig, fname: &str) -> Result<(), ConfigE
         )));
     }
     if ss.max_decel_safe <= 0.0 || ss.max_decel_safe > MAX_SAFE_DECEL {
-        return Err(ctx("safe_stop.max_decel_safe", ss.max_decel_safe, 0.0, MAX_SAFE_DECEL));
+        return Err(ctx(
+            "safe_stop.max_decel_safe",
+            ss.max_decel_safe,
+            0.0,
+            MAX_SAFE_DECEL,
+        ));
     }
 
     let h = &axis.homing;

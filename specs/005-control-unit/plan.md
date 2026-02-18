@@ -31,7 +31,7 @@ Implement the Control Unit — the real-time axis control brain for the EVO indu
 | III. Code Quality & Static Analysis | ✅ PASS | Clippy + cargo deny in CI. All public interfaces have error contracts (FR-090). Complexity managed by orthogonal state machine decomposition. |
 | IV. Consistent Interface Experience | ✅ PASS | Error messages: stable codes + structured payload (FR-090). Config parameters centrally declared (FR-141, FR-142). SHM diagnostics via evo_cu_mqt (FR-134). |
 | V. Performance & Resource Bounds | ✅ PASS | SC-001 through SC-009 define measurable budgets. Per-module CPU budget to be documented in research.md. |
-| VI. Observability & Traceability | ✅ PASS | SHM-only diagnostics (FR-134). Telemetry snapshot via evo_cu_mqt. Tracepoints: cycle start/end, state transitions, deadline violations, errors. Overhead <2% per constitution. |
+| VI. Observability & Traceability | ✅ PASS | SHM-only diagnostics (FR-134). Telemetry snapshot via evo_cu_mqt. Trace points: cycle start/end, state transitions, deadline violations, errors. Overhead <2% per constitution. |
 | VII. Config & Versioning | ✅ PASS | Config immutable after STARTING during normal operation (FR-138a). Hot-reload supported exclusively in SAFETY_STOP state via atomic shadow-config swap (FR-144–FR-147). TOML config with schema validation (FR-142). Struct version hash in SHM headers (FR-130d). All numeric parameters have min/max bounds as const in evo_common (FR-156). Forward-compatible loading: serde(default) + ignore unknown fields (FR-157). |
 | VIII. Security & Safety | ✅ PASS | All SHM inputs validated (segment address, struct hash, heartbeat). No network endpoints in CU. Least privilege: only SHM + clock access needed. |
 | IX. Simplicity & Minimal Dependencies | ✅ PASS | Pure functions on RT path (control engine). Data-oriented: fixed-size arrays, no dynamic dispatch. Dependencies: evo_common, evo_shared_memory, serde, toml, nix, libc — all deterministic. |
@@ -164,7 +164,7 @@ The Control Unit MUST run on standard Linux (no PREEMPT_RT) for development and 
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| XVII: CU is application, not library | CU is inherently an application — it owns the RT loop, SHM connections, and process lifecycle. Extractable parts (control engine, state machines) are pure-function modules that CAN be library-ized later. | Making CU a library with a thin binary wrapper adds indirection without benefit at this stage. The internal modules (control/, state/) are testable independently. |
+| XVII: CU is application, not library | CU is inherently an application — it owns the RT loop, SHM connections, and process lifecycle. Extractable parts (control engine, state machines) are pure-function modules that CAN be librarized later. | Making CU a library with a thin binary wrapper adds indirection without benefit at this stage. The internal modules (control/, state/) are testable independently. |
 | Hard RT deadline (single overrun = SAFETY_STOP) | Constitution says "soft RT" with miss rates. Spec mandates hard deadline. This is MORE conservative than constitution requires. | Allowing any miss rate risks physical damage to machinery. Industrial safety requires hard deadline for motion control. |
 
 ## Post-Design Constitution Re-check

@@ -37,7 +37,7 @@ This specification delivers the **foundational runtime integration** of the EVO 
 │                      │        │                          │
 │  WRITES:             │        │  READS:                  │
 │   evo_hal_cu         │◄──────►│   evo_hal_cu             │
-│   evo_hal_re (plhld) │        │  WRITES:                 │
+│   evo_hal_re         │        │  WRITES:                 │
 │  READS:              │        │   evo_cu_hal             │
 │   evo_cu_hal         │◄──────►│   evo_cu_hal             │
 │   evo_re_hal (skel)  │        │   evo_cu_mqt             │

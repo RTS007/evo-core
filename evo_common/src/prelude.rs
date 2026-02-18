@@ -17,7 +17,7 @@ pub use crate::config::LogLevel;
 pub use crate::config::{ConfigError, ConfigLoader, SharedConfig};
 
 // ─── System Constants ───────────────────────────────────────────────
-pub use crate::consts::{CYCLE_TIME_US, MAX_AXES};
+pub use crate::consts::MAX_AXES;
 
 // ─── I/O ────────────────────────────────────────────────────────────
 pub use crate::io::registry::IoRegistry;

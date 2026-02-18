@@ -29,7 +29,7 @@ use evo_common::shm::segments::{CuToHalSegment, CuToMqtSegment, CuToReSegment};
 
 use crate::config::LoadedConfig;
 use crate::control::output::AxisControlState;
-use crate::shm::segments::{CuSegments, SegmentError, SegmentThresholds};
+use crate::shm::segments::{CuSegments, SegmentThresholds};
 
 // ─── Cycle Statistics (T032) ────────────────────────────────────────
 
@@ -233,7 +233,7 @@ pub enum CycleError {
     /// RT system call failed.
     RtSetup(String),
     /// SHM segment error.
-    Segment(SegmentError),
+    Segment(ShmError),
     /// Cycle overrun detected (FR-138).
     CycleOverrun {
         /// Actual cycle duration [ns].
@@ -261,15 +261,9 @@ impl std::fmt::Display for CycleError {
 
 impl std::error::Error for CycleError {}
 
-impl From<SegmentError> for CycleError {
-    fn from(e: SegmentError) -> Self {
-        Self::Segment(e)
-    }
-}
-
 impl From<ShmError> for CycleError {
     fn from(e: ShmError) -> Self {
-        Self::Segment(SegmentError::Shm(e))
+        Self::Segment(e)
     }
 }
 

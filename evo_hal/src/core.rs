@@ -4,7 +4,7 @@
 //! It manages driver loading, P2P SHM communication, and the real-time loop.
 
 use evo_common::config::FullConfig;
-use evo_common::consts::CYCLE_TIME_US;
+use evo_common::config::DEFAULT_CYCLE_TIME_US;
 use evo_common::hal::config::{AxisConfig, MachineConfig};
 use evo_common::hal::consts::HAL_SERVICE_NAME;
 use evo_common::hal::driver::{HalDriver, HalError};
@@ -129,8 +129,8 @@ impl HalCore {
         full: FullConfig,
         io_registry: Option<IoRegistry>,
     ) -> Result<Self, HalError> {
-        let cycle_time_us = CYCLE_TIME_US;
-        let cycle_time = Duration::from_micros(cycle_time_us);
+        let cycle_time_us = DEFAULT_CYCLE_TIME_US;
+        let cycle_time = Duration::from_micros(cycle_time_us as u64);
         let axis_count = full.axes.len().min(64) as u8;
         let module_status = ModuleStatusPublisher::new(HAL_SERVICE_NAME);
 

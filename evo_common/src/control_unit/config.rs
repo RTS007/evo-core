@@ -6,10 +6,9 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::config::DEFAULT_CYCLE_TIME_US;
 use crate::consts::{
-    CYCLE_TIME_US, CYCLE_TIME_US_MAX, CYCLE_TIME_US_MIN, HAL_STALE_THRESHOLD_DEFAULT,
-    MANUAL_TIMEOUT_DEFAULT, MANUAL_TIMEOUT_MAX, MANUAL_TIMEOUT_MIN, MAX_AXES,
-    MQT_UPDATE_INTERVAL_DEFAULT, NON_RT_STALE_THRESHOLD_DEFAULT,
+    MANUAL_TIMEOUT_MAX, MANUAL_TIMEOUT_MIN, MAX_AXES, MAX_CYCLE_TIME_US, MIN_CYCLE_TIME_US,
 };
 
 use super::command::ServiceBypassConfig;
@@ -19,6 +18,15 @@ use super::safety::{
     BrakeConfig, GearAssistConfig, GuardConfig, IndexConfig, SafeStopConfig, TailstockConfig,
 };
 use super::state::{AxisId, CouplingConfig, SafeStopCategory};
+
+/// Default manual mode timeout [s].
+pub const MANUAL_TIMEOUT_DEFAULT: f64 = 30.0;
+/// Default RT HAL staleness threshold [cycles].
+pub const HAL_STALE_THRESHOLD_DEFAULT: u32 = 3;
+/// Default RE/RPC staleness threshold [cycles].
+pub const NON_RT_STALE_THRESHOLD_DEFAULT: u32 = 1000;
+/// Default diagnostic update interval [cycles].
+pub const MQT_UPDATE_INTERVAL_DEFAULT: u32 = 10;
 
 // ─── Top-Level Config ───────────────────────────────────────────────
 
@@ -63,7 +71,7 @@ pub struct ControlUnitConfig {
 }
 
 fn default_cycle_time_us() -> u32 {
-    CYCLE_TIME_US as u32
+    DEFAULT_CYCLE_TIME_US
 }
 fn default_max_axes() -> u8 {
     MAX_AXES
@@ -84,10 +92,10 @@ fn default_mqt_update() -> u32 {
 impl ControlUnitConfig {
     /// Validate parameter bounds (FR-156).
     pub fn validate(&self) -> Result<(), String> {
-        if self.cycle_time_us < CYCLE_TIME_US_MIN || self.cycle_time_us > CYCLE_TIME_US_MAX {
+        if self.cycle_time_us < MIN_CYCLE_TIME_US || self.cycle_time_us > MAX_CYCLE_TIME_US {
             return Err(format!(
                 "cycle_time_us {} out of range [{}, {}]",
-                self.cycle_time_us, CYCLE_TIME_US_MIN, CYCLE_TIME_US_MAX
+                self.cycle_time_us, MIN_CYCLE_TIME_US, MAX_CYCLE_TIME_US
             ));
         }
         if self.max_axes == 0 || self.max_axes > MAX_AXES {

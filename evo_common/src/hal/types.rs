@@ -6,7 +6,7 @@
 //! - `AxisCommand` / `AxisStatus` - Per-axis data
 //! - `AnalogValue` - Dual representation for analog I/O
 
-use crate::hal::consts::{MAX_AI, MAX_AO, MAX_AXES, MAX_DI, MAX_DO};
+use crate::consts::{MAX_AI, MAX_AO, MAX_AXES, MAX_DI, MAX_DO};
 
 /// Commands read from SHM, passed to driver.
 #[derive(Debug, Clone)]

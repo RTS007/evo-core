@@ -12,8 +12,8 @@ Goal: Establish minimal runtime and communication.
 ## Phase 2: Hardware Abstraction (HAL)
 Goal: Connect to hardware and simulation.
 
-- [ ] HAL traits and driver contracts
-- [ ] Simulation driver for offline testing
+- [X] HAL traits and driver contracts
+- [X] Simulation driver for offline testing
 - [ ] EtherCAT basic I/O (CoE)
 
 ## Phase 3: Logic Execution (MVP)
@@ -27,10 +27,10 @@ Goal: Execute machine logic safely and predictably.
 ## Phase 4: Control Loop & Determinism
 Goal: Stable control on Linux PREEMPT_RT.
 
-- [ ] RTOS preparations
-- [ ] Control Unit main loop with safety hooks
+- [X] RTOS preparations
+- [X] Control Unit main loop with safety hooks
 - [ ] Jitter measurement and tuning
-- [ ] Minimal CLI (start/stop, logs)
+- [X] Minimal CLI (start/stop, logs)
 
 ## Phase 5: Production Readiness (Pilot)
 Goal: Usable in pilot deployments.

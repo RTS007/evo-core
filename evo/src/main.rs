@@ -30,6 +30,7 @@ use evo_common::config::{load_config_dir, WatchdogConfig};
 use nix::sys::signal::{self, Signal};
 use nix::sys::wait::{waitpid, WaitPidFlag, WaitStatus};
 use nix::unistd::Pid;
+use std::ffi::OsString;
 use std::path::PathBuf;
 use std::process::{Child, Command};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -187,7 +188,7 @@ fn run(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
 // ─── Process Spawning (T059) ────────────────────────────────────────
 
 fn spawn_hal(config_dir: &PathBuf, simulate: bool) -> Result<Child, Box<dyn std::error::Error>> {
-    let mut cmd = Command::new("evo_hal");
+    let mut cmd = Command::new(resolve_bin_path("evo_hal"));
     cmd.arg("--config-dir").arg(config_dir);
     if simulate {
         cmd.arg("--simulate");
@@ -197,12 +198,28 @@ fn spawn_hal(config_dir: &PathBuf, simulate: bool) -> Result<Child, Box<dyn std:
 }
 
 fn spawn_cu(config_dir: &PathBuf) -> Result<Child, Box<dyn std::error::Error>> {
-    let child = Command::new("evo_control_unit")
+    let child = Command::new(resolve_bin_path("evo_control_unit"))
         .arg("--config-dir")
         .arg(config_dir)
         .spawn()
         .map_err(|e| format!("failed to spawn evo_control_unit: {e}"))?;
     Ok(child)
+}
+
+/// Resolve child executable path.
+///
+/// Prefer local sibling binaries next to currently running `evo` binary
+/// (e.g. `target/debug/evo_hal`) and fall back to plain binary name on PATH.
+fn resolve_bin_path(bin_name: &str) -> OsString {
+    if let Ok(current_exe) = std::env::current_exe() {
+        if let Some(dir) = current_exe.parent() {
+            let candidate = dir.join(bin_name);
+            if candidate.exists() {
+                return candidate.into_os_string();
+            }
+        }
+    }
+    OsString::from(bin_name)
 }
 
 // ─── Ordered Startup (T060) ────────────────────────────────────────

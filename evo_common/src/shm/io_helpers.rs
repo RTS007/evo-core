@@ -31,7 +31,10 @@ pub const BANK_WORDS: usize = 16;
 /// Panics in debug mode if `pin >= MAX_DI`.
 #[inline]
 pub fn get_di(bank: &[u64; BANK_WORDS], pin: usize) -> bool {
-    debug_assert!(pin < MAX_DI, "DI pin index {pin} out of range (max {MAX_DI})");
+    debug_assert!(
+        pin < MAX_DI,
+        "DI pin index {pin} out of range (max {MAX_DI})"
+    );
     let word = pin / 64;
     let bit = pin % 64;
     (bank[word] >> bit) & 1 == 1
@@ -48,7 +51,10 @@ pub fn get_di(bank: &[u64; BANK_WORDS], pin: usize) -> bool {
 /// Panics in debug mode if `pin >= MAX_DO`.
 #[inline]
 pub fn set_do(bank: &mut [u64; BANK_WORDS], pin: usize, value: bool) {
-    debug_assert!(pin < MAX_DO, "DO pin index {pin} out of range (max {MAX_DO})");
+    debug_assert!(
+        pin < MAX_DO,
+        "DO pin index {pin} out of range (max {MAX_DO})"
+    );
     let word = pin / 64;
     let bit = pin % 64;
     if value {

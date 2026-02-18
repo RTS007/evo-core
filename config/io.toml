@@ -91,7 +91,7 @@
 [Safety]
 name = "Safety circuits"
 io = [
-    { type="di", role="EStop", pin=1, logic="NC", debounce=100, name="Main E-Stop", sim=true },
+    { type="di", role="EStop", pin=1, logic="NC", debounce=100, name="Main E-Stop", sim=1.0 },
 
     # Two-hand operation - both buttons within 500ms
     { type="di", role="Start", pin=2, debounce=20, enable_pin=3, enable_state=true, enable_timeout=500, name="Start (left)" },
@@ -107,7 +107,7 @@ io = [
 [Pneumatics]
 name = "Pneumatics"
 io = [
-    { type="di", role="PressureOk", pin=10, logic="NC", name="Main pressure OK", sim=true },
+    { type="di", role="PressureOk", pin=10, logic="NC", name="Main pressure OK", sim=1.0 },
     { type="di", pin=11, name="Vacuum OK" },
 
     { type="ai", pin=64, max=10.0, unit="bar", average=10, sim=6.0, name="Pressure value" },

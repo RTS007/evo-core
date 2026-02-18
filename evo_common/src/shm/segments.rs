@@ -189,7 +189,7 @@ macro_rules! impl_default_zeroed {
 #[repr(C, align(64))]
 pub struct HalToCuSegment {
     /// Per-axis feedback (position, velocity, torque, flags).
-    pub axes: [HalAxisFeedback; MAX_AXES],
+    pub axes: [HalAxisFeedback; MAX_AXES as usize],
     /// Digital input bank — 1024 bits packed into 16×u64.
     pub di_bank: [u64; BANK_WORDS],
     /// Analog input values in engineering units.
@@ -208,7 +208,7 @@ pub struct HalToCuSegment {
 #[repr(C, align(64))]
 pub struct CuToHalSegment {
     /// Per-axis commands (position, velocity, torque, enable).
-    pub axes: [CuAxisCommand; MAX_AXES],
+    pub axes: [CuAxisCommand; MAX_AXES as usize],
     /// Digital output bank — 1024 bits packed into 16×u64.
     pub do_bank: [u64; BANK_WORDS],
     /// Analog output values in engineering units.
@@ -241,7 +241,7 @@ pub struct CuToMqtSegment {
     /// Error flags — full width, NOT truncated (FR-043).
     pub error_flags: u32,
     /// Per-axis status (6 state machines + flags).
-    pub axis_status: [CuAxisStatus; MAX_AXES],
+    pub axis_status: [CuAxisStatus; MAX_AXES as usize],
 }
 
 /// **#4** HAL → MQTT telemetry (`evo_hal_mqt`).
@@ -254,7 +254,7 @@ pub struct CuToMqtSegment {
 #[repr(C, align(64))]
 pub struct HalToMqtSegment {
     /// Per-axis feedback.
-    pub axes: [HalAxisFeedback; MAX_AXES],
+    pub axes: [HalAxisFeedback; MAX_AXES as usize],
     /// Digital input bank.
     pub di_bank: [u64; BANK_WORDS],
     /// Analog input values.
@@ -266,7 +266,7 @@ pub struct HalToMqtSegment {
     /// Driver cycle time in nanoseconds.
     pub cycle_time_ns: u64,
     /// Per-axis driver state (enum discriminants).
-    pub driver_state: [u8; MAX_AXES],
+    pub driver_state: [u8; MAX_AXES as usize],
     /// Number of active axes.
     pub axis_count: u8,
 }
@@ -440,15 +440,15 @@ pub struct CuToRpcSegment {
     /// Error flags (full width).
     pub error_flags: u32,
     /// Per-axis status (6 state machines + flags).
-    pub axis_status: [CuAxisStatus; MAX_AXES],
+    pub axis_status: [CuAxisStatus; MAX_AXES as usize],
     /// Per-axis PID diagnostic state.
-    pub pid_states: [AxisPidState; MAX_AXES],
+    pub pid_states: [AxisPidState; MAX_AXES as usize],
     /// Last cycle duration in nanoseconds.
     pub last_cycle_ns: u64,
     /// Maximum observed cycle duration in nanoseconds.
     pub max_cycle_ns: u64,
     /// Jitter histogram (microseconds, 64 buckets).
-    pub jitter_histogram_us: [u32; MAX_AXES],
+    pub jitter_histogram_us: [u32; MAX_AXES as usize],
 }
 
 /// **#14** HAL → gRPC response segment (`evo_hal_rpc`).
@@ -481,7 +481,7 @@ pub struct HalToRpcSegment {
 #[repr(C, align(64))]
 pub struct HalToReSegment {
     /// Per-axis feedback (position, velocity, torque, flags).
-    pub axes: [HalAxisFeedback; MAX_AXES],
+    pub axes: [HalAxisFeedback; MAX_AXES as usize],
     /// Digital input bank.
     pub di_bank: [u64; BANK_WORDS],
     /// Digital output bank.

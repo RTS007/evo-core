@@ -37,7 +37,7 @@ pub fn hal_status_to_segment(status: &HalStatus, axis_count: u8) -> HalToCuSegme
     seg.axis_count = axis_count;
 
     // Per-axis feedback.
-    let count = (axis_count as usize).min(MAX_AXES);
+    let count = (axis_count as usize).min(MAX_AXES as usize);
     for i in 0..count {
         let src = &status.axes[i];
         seg.axes[i] = HalAxisFeedback {
@@ -77,7 +77,7 @@ pub fn segment_to_hal_commands(seg: &CuToHalSegment) -> HalCommands {
     let mut cmds = HalCommands::default();
 
     // Per-axis commands.
-    let count = (seg.axis_count as usize).min(MAX_AXES);
+    let count = (seg.axis_count as usize).min(MAX_AXES as usize);
     for i in 0..count {
         let src = &seg.axes[i];
         cmds.axes[i] = AxisCommand {
@@ -109,7 +109,7 @@ pub fn hal_commands_to_segment(cmds: &HalCommands, axis_count: u8) -> CuToHalSeg
     let mut seg = CuToHalSegment::default();
     seg.axis_count = axis_count;
 
-    let count = (axis_count as usize).min(MAX_AXES);
+    let count = (axis_count as usize).min(MAX_AXES as usize);
     for i in 0..count {
         let src = &cmds.axes[i];
         seg.axes[i] = CuAxisCommand {
@@ -138,7 +138,7 @@ pub fn hal_commands_to_segment(cmds: &HalCommands, axis_count: u8) -> CuToHalSeg
 pub fn segment_to_hal_status(seg: &HalToCuSegment) -> HalStatus {
     let mut status = HalStatus::default();
 
-    let count = (seg.axis_count as usize).min(MAX_AXES);
+    let count = (seg.axis_count as usize).min(MAX_AXES as usize);
     for i in 0..count {
         let src = &seg.axes[i];
         status.axes[i] = AxisStatus {
@@ -179,7 +179,7 @@ mod tests {
     /// Build a test HalStatus with known values.
     fn make_test_status(axis_count: usize) -> HalStatus {
         let mut status = HalStatus::default();
-        for i in 0..axis_count.min(MAX_AXES) {
+        for i in 0..axis_count.min(MAX_AXES as usize) {
             status.axes[i] = AxisStatus {
                 actual_position: 100.0 + i as f64,
                 actual_velocity: 10.0 + i as f64,

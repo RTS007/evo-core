@@ -20,8 +20,7 @@
 //! ## Runtime State (T034)
 //! Pre-allocated `[AxisRuntimeState; MAX_AXES]` + global machine/safety state.
 
-use evo_common::consts::MAX_AI;
-use evo_common::control_unit::config::MAX_AXES_LIMIT;
+use evo_common::consts::{MAX_AI, MAX_AXES};
 use evo_common::control_unit::state::{MachineState, SafetyState};
 use evo_common::io::registry::IoRegistry;
 use evo_common::shm::io_helpers::BANK_WORDS;
@@ -182,7 +181,7 @@ impl Default for AxisRuntimeState {
 /// All fields are stack/inline — zero heap allocation.
 pub struct RuntimeState {
     /// Per-axis state array (fixed-size, max 64 axes).
-    pub axes: [AxisRuntimeState; MAX_AXES_LIMIT as usize],
+    pub axes: [AxisRuntimeState; MAX_AXES as usize],
     /// Number of active axes (from config).
     pub axis_count: u8,
     /// Global machine state.
@@ -211,7 +210,7 @@ impl RuntimeState {
     /// Create a new zeroed runtime state with the given axis count.
     pub fn new(axis_count: u8) -> Self {
         Self {
-            axes: [AxisRuntimeState::default(); MAX_AXES_LIMIT as usize],
+            axes: [AxisRuntimeState::default(); MAX_AXES as usize],
             axis_count,
             machine_state: MachineState::default(),
             safety_state: SafetyState::default(),
@@ -388,7 +387,7 @@ pub struct CycleRunner {
     /// I/O registry for role-based pin access (from config).
     pub io_registry: IoRegistry,
     /// Per-axis control engine state (PID, DOB, filters).
-    pub control_states: [AxisControlState; MAX_AXES_LIMIT as usize],
+    pub control_states: [AxisControlState; MAX_AXES as usize],
     /// Cycles between RE/RPC late-attach attempts.
     attach_interval_cycles: u64,
 }

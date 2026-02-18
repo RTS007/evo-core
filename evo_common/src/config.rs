@@ -198,7 +198,7 @@ pub const MIN_CYCLE_TIME_US: u32 = 100;
 /// Maximum cycle time in microseconds.
 pub const MAX_CYCLE_TIME_US: u32 = 100_000;
 /// Maximum axis count.
-pub const MAX_AXIS_COUNT: usize = crate::consts::MAX_AXES;
+pub const MAX_AXIS_COUNT: usize = crate::consts::MAX_AXES as usize;
 /// Maximum position range (absolute value).
 pub const MAX_POSITION_RANGE: f64 = 1_000_000.0;
 /// Maximum out_max control output.

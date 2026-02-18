@@ -37,11 +37,11 @@ nix = { version = "0.31.1", features = ["fs", "mman", "process", "sched", "signa
 libc = "0.2.180"
 
 # CLI
-clap = { version = "4.5.57", features = ["derive"] }
+clap = { version = "4.5.59", features = ["derive"] }
 
 # Static analysis
 static_assertions = "1.1"
-bitflags = "2.9"
+bitflags = "2.11.0"
 
 # Dev/bench
 criterion = { version = "0.8.2", features = ["html_reports"] }

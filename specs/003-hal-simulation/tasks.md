@@ -34,7 +34,7 @@
 
 ### HAL Constants (evo_common)
 
-- [X] T005 [P] Add `DEFAULT_CYCLE_TIME_US` (1000) and `DEFAULT_CYCLE_TIME` (Duration) to `evo_common/src/prelude.rs`
+- [X] T005 [P] Add `CYCLE_TIME_US` (1000) to `evo_common/src/prelude.rs`
 - [X] T006 [P] Create `evo_common/src/hal/mod.rs` with module exports (config, consts, driver, types)
 - [X] T007 [P] Create `evo_common/src/hal/consts.rs` with MAX_AXES, MAX_DI, MAX_DO, MAX_AI, MAX_AO, DEFAULT_CONFIG_PATH
 

@@ -21,12 +21,12 @@
 //! All functions operate on pre-allocated arrays and return stack-local
 //! results. No heap allocation occurs.
 
-use evo_common::control_unit::config::MAX_AXES_LIMIT;
+use evo_common::consts::MAX_AXES;
 use evo_common::control_unit::error::{AxisErrorState, CouplingError};
 use evo_common::control_unit::state::AxisId;
 
 /// Maximum number of axes (compile-time bound for fixed arrays).
-const MAX_AXES: usize = MAX_AXES_LIMIT as usize;
+const MAX_AXES_USIZE: usize = MAX_AXES as usize;
 
 // ─── Propagation Result ─────────────────────────────────────────────
 
@@ -36,9 +36,9 @@ pub struct PropagationResult {
     /// If true, at least one CRITICAL error was found → trigger `SAFETY_STOP`.
     pub safety_stop_required: bool,
     /// Per-axis: true if the axis has any error (critical or not).
-    pub axis_has_error: [bool; MAX_AXES],
+    pub axis_has_error: [bool; MAX_AXES_USIZE],
     /// Per-axis: true if the axis has a CRITICAL error.
-    pub axis_has_critical: [bool; MAX_AXES],
+    pub axis_has_critical: [bool; MAX_AXES_USIZE],
     /// Index of the first axis with a critical error (for diagnostics).
     pub first_critical_axis: Option<u8>,
 }
@@ -48,8 +48,8 @@ impl PropagationResult {
     pub const fn clean() -> Self {
         Self {
             safety_stop_required: false,
-            axis_has_error: [false; MAX_AXES],
-            axis_has_critical: [false; MAX_AXES],
+            axis_has_error: [false; MAX_AXES_USIZE],
+            axis_has_critical: [false; MAX_AXES_USIZE],
             first_critical_axis: None,
         }
     }
@@ -64,7 +64,7 @@ impl PropagationResult {
 #[derive(Debug, Clone)]
 pub struct CouplingTopology {
     /// `master_of[axis_id] = Some(master_axis_id)` if `axis_id` is a slave.
-    master_of: [Option<u8>; MAX_AXES],
+    master_of: [Option<u8>; MAX_AXES_USIZE],
 }
 
 impl CouplingTopology {
@@ -74,9 +74,9 @@ impl CouplingTopology {
     /// - `axis_master_pairs`: Iterator of `(axis_id, master_axis_id)` for
     ///   each axis that has a coupling.master_axis set.
     pub fn from_config(axis_master_pairs: impl Iterator<Item = (u8, u8)>) -> Self {
-        let mut master_of = [None; MAX_AXES];
+        let mut master_of = [None; MAX_AXES_USIZE];
         for (axis_id, master_id) in axis_master_pairs {
-            if (axis_id as usize) < MAX_AXES {
+            if (axis_id as usize) < MAX_AXES_USIZE {
                 master_of[axis_id as usize] = Some(master_id);
             }
         }
@@ -86,7 +86,7 @@ impl CouplingTopology {
     /// Create an empty topology (no coupling).
     pub const fn empty() -> Self {
         Self {
-            master_of: [None; MAX_AXES],
+            master_of: [None; MAX_AXES_USIZE],
         }
     }
 
@@ -117,7 +117,7 @@ impl CouplingTopology {
 /// # RT Safety
 /// Zero-allocation. O(axis_count) scan with O(depth) coupling walk.
 pub fn evaluate_errors(
-    errors: &[AxisErrorState; MAX_AXES],
+    errors: &[AxisErrorState; MAX_AXES_USIZE],
     axis_count: u8,
     topology: &CouplingTopology,
 ) -> PropagationResult {
@@ -187,7 +187,7 @@ pub fn evaluate_errors(
 /// - `axis_count`: Number of active axes.
 /// - `topology`: Pre-computed coupling graph.
 pub fn propagate_coupling_errors(
-    errors: &mut [AxisErrorState; MAX_AXES],
+    errors: &mut [AxisErrorState; MAX_AXES_USIZE],
     axis_count: u8,
     topology: &CouplingTopology,
 ) {
@@ -224,8 +224,8 @@ mod tests {
         CommandError, CouplingError, GearboxError, MotionError, PowerError,
     };
 
-    fn make_errors() -> [AxisErrorState; MAX_AXES] {
-        [AxisErrorState::default(); MAX_AXES]
+    fn make_errors() -> [AxisErrorState; MAX_AXES_USIZE] {
+        [AxisErrorState::default(); MAX_AXES_USIZE]
     }
 
     #[test]

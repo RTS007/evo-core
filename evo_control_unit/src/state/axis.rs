@@ -6,7 +6,7 @@
 //! This is the per-axis orchestrator called once per cycle to evaluate
 //! all sub-state machines and produce the axis state snapshot.
 
-use evo_common::control_unit::config::MAX_AXES_LIMIT;
+use evo_common::consts::MAX_AXES;
 use evo_common::control_unit::error::AxisErrorState;
 use evo_common::control_unit::shm::AxisStateSnapshot;
 use evo_common::control_unit::state::{
@@ -18,7 +18,7 @@ use super::operational::OperationalModeMachine;
 use super::power::PowerStateMachine;
 
 /// Maximum number of axes (compile-time bound).
-const MAX_AXES: usize = MAX_AXES_LIMIT as usize;
+const MAX_AXES_USIZE: usize = MAX_AXES as usize;
 
 /// Per-axis state container aggregating all sub-state machines.
 #[derive(Debug, Clone)]
@@ -92,7 +92,7 @@ impl AxisState {
 #[derive(Debug)]
 pub struct AxisStates {
     /// Per-axis state (indexed by position, not axis_id).
-    pub axes: [Option<AxisState>; MAX_AXES],
+    pub axes: [Option<AxisState>; MAX_AXES_USIZE],
     /// Number of active axes.
     pub count: u8,
 }
@@ -101,7 +101,7 @@ impl AxisStates {
     /// Create an empty axis states collection.
     pub const fn new() -> Self {
         Self {
-            axes: [const { None }; MAX_AXES],
+            axes: [const { None }; MAX_AXES_USIZE],
             count: 0,
         }
     }
@@ -112,7 +112,7 @@ impl AxisStates {
     ) -> Self {
         let mut states = Self::new();
         for (i, &(axis_id, has_brake, has_lock_pin, is_gravity)) in configs.iter().enumerate() {
-            if i >= MAX_AXES {
+            if i >= MAX_AXES_USIZE {
                 break;
             }
             states.axes[i] = Some(AxisState::new(axis_id, has_brake, has_lock_pin, is_gravity));

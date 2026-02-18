@@ -32,7 +32,7 @@ Total:      49472 bytes (~48.3 KB)
 | 0x18 | 4 | u32 | do_count | Number of configured digital outputs (0-1024) |
 | 0x1C | 4 | u32 | ai_count | Number of configured analog inputs (0-1024) |
 | 0x20 | 4 | u32 | ao_count | Number of configured analog outputs (0-1024) |
-| 0x24 | 4 | u32 | cycle_time_us | System cycle time (from MachineConfig, defaults to DEFAULT_CYCLE_TIME_US) |
+| 0x24 | 4 | u32 | cycle_time_us | System cycle time (from MachineConfig, defaults to CYCLE_TIME_US) |
 | 0x28 | 24 | u8[24] | _reserved | Reserved for future use |
 
 ## Axis Data (256 bytes per axis)

@@ -21,7 +21,7 @@ Implement a Hardware Abstraction Layer (HAL) Core binary that manages pluggable 
 **Target Platform**: Linux (Ubuntu 22.04+, standard or PREEMPT_RT kernel)  
 **RT Detection**: Auto-detect via `sched_getscheduler()` - SCHED_FIFO/SCHED_RR = RT mode  
 **Project Type**: Workspace crates (library + binary)  
-**Performance Goals**: Configurable cycle time (default 1ms via `DEFAULT_CYCLE_TIME_US`), <5% CPU usage on standard PC  
+**Performance Goals**: Configurable cycle time (default 1ms via `CYCLE_TIME_US`), <5% CPU usage on standard PC  
 **Constraints**: <1μs per axis physics calculation, <100μs state persistence  
 **Scale/Scope**: Max 64 axes, Max 1024 DI/DO/AI/AO (~48KB SHM)
 

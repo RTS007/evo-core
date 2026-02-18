@@ -136,7 +136,7 @@ impl HalCore {
 
         // Build a legacy MachineConfig from the new format for driver compatibility.
         let mut config = MachineConfig::default();
-        config.cycle_time_us = cycle_time_us as u32;
+        config.cycle_time_us = cycle_time_us;
         config.drivers = vec!["simulation".to_string()];
 
         info!(

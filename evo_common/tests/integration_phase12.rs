@@ -121,7 +121,7 @@ fn test_max_axes_defined_once() {
     // This is verified by compilation — if MAX_AXES were defined in
     // multiple places with different values, we'd get ambiguous imports.
     use evo_common::consts::MAX_AXES;
-    assert_eq!(MAX_AXES, 64);
+    assert_eq!(MAX_AXES, 64u8);
 }
 
 #[test]

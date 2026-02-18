@@ -9,14 +9,14 @@
 use crate::hal::consts::{MAX_AI, MAX_AO, MAX_AXES, MAX_DI, MAX_DO};
 use crate::hal::driver::HalError;
 use crate::io::config::AnalogCurve;
-use crate::prelude::DEFAULT_CYCLE_TIME_US;
+use crate::prelude::CYCLE_TIME_US;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
 /// Default function for cycle_time_us
-fn default_cycle_time_us() -> u32 {
-    DEFAULT_CYCLE_TIME_US
+fn default_cycle_time_us() -> u64 {
+    CYCLE_TIME_US
 }
 
 /// Default function for in_position_window
@@ -38,9 +38,9 @@ fn default_true() -> bool {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MachineConfig {
     /// System cycle time in microseconds.
-    /// Defaults to DEFAULT_CYCLE_TIME_US (1000μs) if omitted.
+    /// Defaults to CYCLE_TIME_US (1000μs) if omitted.
     #[serde(default = "default_cycle_time_us")]
-    pub cycle_time_us: u32,
+    pub cycle_time_us: u64,
 
     /// Path to state persistence file (relative to config dir).
     /// Used by all drivers to persist axis positions across restarts.
@@ -98,7 +98,7 @@ impl MachineConfig {
         }
 
         // Check axis count
-        if self.axes.len() > MAX_AXES {
+        if self.axes.len() > MAX_AXES as usize {
             return Err(HalError::ConfigError(format!(
                 "Too many axes: {} (max {})",
                 self.axes.len(),
@@ -193,7 +193,7 @@ impl MachineConfig {
 impl Default for MachineConfig {
     fn default() -> Self {
         Self {
-            cycle_time_us: DEFAULT_CYCLE_TIME_US,
+            cycle_time_us: CYCLE_TIME_US,
             state_file: None,
             drivers: Vec::new(),
             driver_config: HashMap::new(),
@@ -527,7 +527,7 @@ mod tests {
     #[test]
     fn test_machine_config_default() {
         let config = MachineConfig::default();
-        assert_eq!(config.cycle_time_us, DEFAULT_CYCLE_TIME_US);
+        assert_eq!(config.cycle_time_us, CYCLE_TIME_US);
         assert!(config.axes.is_empty());
         assert!(config.digital_inputs.is_empty());
     }

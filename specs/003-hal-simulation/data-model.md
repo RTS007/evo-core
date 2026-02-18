@@ -173,7 +173,7 @@ pub struct MachineConfig {
     pub shared: SharedConfig,
     
     /// System cycle time in microseconds
-    /// Defaults to evo_common::prelude::DEFAULT_CYCLE_TIME_US (1000μs) if omitted
+    /// Defaults to evo_common::prelude::CYCLE_TIME_US (1000μs) if omitted
     #[serde(default = "default_cycle_time_us")]
     pub cycle_time_us: u32,
     

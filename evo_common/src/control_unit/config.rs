@@ -6,6 +6,12 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::consts::{
+    CYCLE_TIME_US, CYCLE_TIME_US_MAX, CYCLE_TIME_US_MIN, HAL_STALE_THRESHOLD_DEFAULT,
+    MANUAL_TIMEOUT_DEFAULT, MANUAL_TIMEOUT_MAX, MANUAL_TIMEOUT_MIN, MAX_AXES,
+    MQT_UPDATE_INTERVAL_DEFAULT, NON_RT_STALE_THRESHOLD_DEFAULT,
+};
+
 use super::command::ServiceBypassConfig;
 use super::control::UniversalControlParameters;
 use super::homing::HomingConfig;
@@ -13,32 +19,6 @@ use super::safety::{
     BrakeConfig, GearAssistConfig, GuardConfig, IndexConfig, SafeStopConfig, TailstockConfig,
 };
 use super::state::{AxisId, CouplingConfig, SafeStopCategory};
-
-// ─── Parameter Bounds (FR-156) ──────────────────────────────────────
-
-/// Minimum cycle time [µs].
-pub const CYCLE_TIME_US_MIN: u32 = 100;
-/// Maximum cycle time [µs].
-pub const CYCLE_TIME_US_MAX: u32 = 10_000;
-/// Default cycle time [µs] (1 ms).
-pub const CYCLE_TIME_US_DEFAULT: u32 = 1000;
-
-/// Maximum number of axes.
-pub const MAX_AXES_LIMIT: u8 = 64;
-
-/// Default manual mode timeout [s].
-pub const MANUAL_TIMEOUT_DEFAULT: f64 = 30.0;
-/// Minimum manual mode timeout [s].
-pub const MANUAL_TIMEOUT_MIN: f64 = 1.0;
-/// Maximum manual mode timeout [s].
-pub const MANUAL_TIMEOUT_MAX: f64 = 300.0;
-
-/// Default RT HAL staleness threshold [cycles].
-pub const HAL_STALE_THRESHOLD_DEFAULT: u32 = 3;
-/// Default RE/RPC staleness threshold [cycles].
-pub const NON_RT_STALE_THRESHOLD_DEFAULT: u32 = 1000;
-/// Default diagnostic update interval [cycles].
-pub const MQT_UPDATE_INTERVAL_DEFAULT: u32 = 10;
 
 // ─── Top-Level Config ───────────────────────────────────────────────
 
@@ -83,10 +63,10 @@ pub struct ControlUnitConfig {
 }
 
 fn default_cycle_time_us() -> u32 {
-    CYCLE_TIME_US_DEFAULT
+    CYCLE_TIME_US as u32
 }
 fn default_max_axes() -> u8 {
-    MAX_AXES_LIMIT
+    MAX_AXES
 }
 fn default_manual_timeout() -> f64 {
     MANUAL_TIMEOUT_DEFAULT
@@ -110,10 +90,10 @@ impl ControlUnitConfig {
                 self.cycle_time_us, CYCLE_TIME_US_MIN, CYCLE_TIME_US_MAX
             ));
         }
-        if self.max_axes == 0 || self.max_axes > MAX_AXES_LIMIT {
+        if self.max_axes == 0 || self.max_axes > MAX_AXES {
             return Err(format!(
                 "max_axes {} out of range [1, {}]",
-                self.max_axes, MAX_AXES_LIMIT
+                self.max_axes, MAX_AXES
             ));
         }
         if self.manual_timeout < MANUAL_TIMEOUT_MIN || self.manual_timeout > MANUAL_TIMEOUT_MAX {

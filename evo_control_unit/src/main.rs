@@ -142,21 +142,25 @@ fn adapt_full_config(
     full: &evo_common::config::FullConfig,
     io_registry: Option<IoRegistry>,
 ) -> Result<LoadedConfig, Box<dyn std::error::Error>> {
+    use evo_common::consts::{
+        CYCLE_TIME_US, HAL_STALE_THRESHOLD_DEFAULT, MANUAL_TIMEOUT_DEFAULT,
+        MQT_UPDATE_INTERVAL_DEFAULT, NON_RT_STALE_THRESHOLD_DEFAULT,
+    };
     use evo_common::control_unit::config::{
-        ControlUnitConfig, CuAxisConfig, CuMachineConfig, CYCLE_TIME_US_DEFAULT,
+        ControlUnitConfig, CuAxisConfig, CuMachineConfig,
     };
 
-    // Build ControlUnitConfig from defaults (unified config doesn't embed CU-specific params).
+    // Build ControlUnitConfig from defaults.
     let cu_config = ControlUnitConfig {
-        cycle_time_us: CYCLE_TIME_US_DEFAULT,
+        cycle_time_us: CYCLE_TIME_US as u32,
         max_axes: full.axes.len() as u8,
         machine_config_path: String::new(), // Not used in unified mode
         io_config_path: String::new(),      // Not used in unified mode
-        manual_timeout: 30.0,
-        hal_stale_threshold: 3,
-        re_stale_threshold: 1000,
-        rpc_stale_threshold: 1000,
-        mqt_update_interval: 10,
+        manual_timeout: MANUAL_TIMEOUT_DEFAULT,
+        hal_stale_threshold: HAL_STALE_THRESHOLD_DEFAULT,
+        re_stale_threshold: NON_RT_STALE_THRESHOLD_DEFAULT,
+        rpc_stale_threshold: NON_RT_STALE_THRESHOLD_DEFAULT,
+        mqt_update_interval: MQT_UPDATE_INTERVAL_DEFAULT,
     };
 
     // Map axes: NewAxisConfig → CuAxisConfig.

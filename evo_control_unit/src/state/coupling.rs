@@ -14,7 +14,7 @@
 //! SyncLost → WaitingSync (re-sync command)
 //! ```
 
-use evo_common::control_unit::config::MAX_AXES_LIMIT;
+use evo_common::consts::MAX_AXES;
 use evo_common::control_unit::error::CouplingError;
 use evo_common::control_unit::state::{CouplingConfig, CouplingState, MotionState, PowerState};
 
@@ -194,7 +194,7 @@ impl CouplingStateMachine {
 // ─── T055: Bottom-Up Synchronization (FR-052) ──────────────────────
 
 /// Per-axis sync readiness flags.
-const MAX_AXES: usize = MAX_AXES_LIMIT as usize;
+const MAX_AXES_USIZE: usize = MAX_AXES as usize;
 
 /// Check if all direct slaves of a master have reached sync.
 ///
@@ -224,7 +224,7 @@ pub fn all_slaves_synced(
 ///
 /// `sync_ready[axis_id]` should be set by the caller based on position/velocity check.
 pub fn process_bottom_up_sync(
-    sync_ready: &[bool; MAX_AXES],
+    sync_ready: &[bool; MAX_AXES_USIZE],
     coupling_machines: &mut [CouplingStateMachine],
     axis_count: usize,
 ) -> heapless::Vec<u8, 64> {

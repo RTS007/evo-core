@@ -12,7 +12,7 @@ use crate::hal::consts::{MAX_AI, MAX_AO, MAX_AXES, MAX_DI, MAX_DO};
 #[derive(Debug, Clone)]
 pub struct HalCommands {
     /// Per-axis commands
-    pub axes: [AxisCommand; MAX_AXES],
+    pub axes: [AxisCommand; MAX_AXES as usize],
     /// Digital output states (from Control Unit)
     pub digital_outputs: [bool; MAX_DO],
     /// Analog output values (normalized 0.0-1.0)
@@ -22,7 +22,7 @@ pub struct HalCommands {
 impl Default for HalCommands {
     fn default() -> Self {
         Self {
-            axes: [AxisCommand::default(); MAX_AXES],
+            axes: [AxisCommand::default(); MAX_AXES as usize],
             digital_outputs: [false; MAX_DO],
             analog_outputs: [0.0; MAX_AO],
         }
@@ -46,7 +46,7 @@ pub struct AxisCommand {
 #[derive(Debug, Clone)]
 pub struct HalStatus {
     /// Per-axis status
-    pub axes: [AxisStatus; MAX_AXES],
+    pub axes: [AxisStatus; MAX_AXES as usize],
     /// Digital input states (from hardware/simulation)
     pub digital_inputs: [bool; MAX_DI],
     /// Analog input values (normalized 0.0-1.0, scaled)
@@ -56,7 +56,7 @@ pub struct HalStatus {
 impl Default for HalStatus {
     fn default() -> Self {
         Self {
-            axes: [AxisStatus::default(); MAX_AXES],
+            axes: [AxisStatus::default(); MAX_AXES as usize],
             digital_inputs: [false; MAX_DI],
             analog_inputs: [AnalogValue::default(); MAX_AI],
         }
@@ -172,7 +172,7 @@ mod tests {
     #[test]
     fn test_hal_commands_default() {
         let cmds = HalCommands::default();
-        assert_eq!(cmds.axes.len(), MAX_AXES);
+        assert_eq!(cmds.axes.len(), MAX_AXES as usize);
         assert_eq!(cmds.digital_outputs.len(), MAX_DO);
         assert_eq!(cmds.analog_outputs.len(), MAX_AO);
     }
@@ -180,7 +180,7 @@ mod tests {
     #[test]
     fn test_hal_status_default() {
         let status = HalStatus::default();
-        assert_eq!(status.axes.len(), MAX_AXES);
+        assert_eq!(status.axes.len(), MAX_AXES as usize);
         assert_eq!(status.digital_inputs.len(), MAX_DI);
         assert_eq!(status.analog_inputs.len(), MAX_AI);
     }

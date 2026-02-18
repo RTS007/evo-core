@@ -4,11 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-evo = { package = "evo_common", path = "../evo_common" }
-evo_shared_memory = { path = "../evo_shared_memory" }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-tracing = "0.1"
-tracing-subscriber = "0.3"
-parking_lot = "0.12"
-tokio = { version = "1.0", features = ["full"] }
+evo_common = { path = "../evo_common" }
+clap = { workspace = true }
+nix = { workspace = true }
+libc = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

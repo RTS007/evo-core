@@ -124,9 +124,6 @@ impl Default for SafeStopCategory {
 /// Axis identifier — 1-based (1..=64), maps to array index `id - 1` (FR-143).
 pub type AxisId = u8;
 
-/// Maximum number of axes supported.
-pub const MAX_AXES: usize = 64;
-
 /// Per-axis power state (FR-020).
 ///
 /// No motion output when `PowerState != Motion` (I-PW-1).

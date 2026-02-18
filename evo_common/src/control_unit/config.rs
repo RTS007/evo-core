@@ -141,6 +141,16 @@ pub struct CuMachineConfig {
     pub service_bypass: ServiceBypassConfig,
 }
 
+impl Default for CuMachineConfig {
+    fn default() -> Self {
+        Self {
+            axes: Vec::new(),
+            global_safety: GlobalSafetyConfig::default(),
+            service_bypass: ServiceBypassConfig::default(),
+        }
+    }
+}
+
 /// Per-axis configuration (FR-142).
 ///
 /// Peripheral I/O fields use string role names resolved via `IoRegistry` at startup.
@@ -224,6 +234,42 @@ fn default_max_pos() -> f64 {
 }
 fn default_in_position_window() -> f64 {
     0.1
+}
+
+impl CuAxisConfig {
+    /// Convert from the new unified `NewAxisConfig` (from `load_config_dir`).
+    ///
+    /// Maps the per-axis identity, kinematics, and control fields into CU-specific
+    /// configuration. Optional peripherals (tailstock, brake, guard) are not mapped
+    /// because they use a different config schema in the unified layout.
+    pub fn from_new_axis_config(ax: &crate::config::NewAxisConfig) -> Self {
+        Self {
+            axis_id: ax.axis.id,
+            name: ax.axis.name.clone(),
+            max_velocity: ax.kinematics.max_velocity,
+            safe_reduced_speed_limit: ax.kinematics.safe_reduced_speed_limit,
+            control: UniversalControlParameters {
+                kp: ax.control.kp,
+                ki: ax.control.ki,
+                kd: ax.control.kd,
+                ..Default::default()
+            },
+            safe_stop: SafeStopConfig::default(),
+            homing: HomingConfig::default(),
+            tailstock: None,
+            index: None,
+            brake: None,
+            guard: None,
+            coupling: None,
+            gear_assist: None,
+            motion_enable_input: None,
+            min_pos: ax.kinematics.min_pos,
+            max_pos: ax.kinematics.max_pos,
+            in_position_window: ax.kinematics.in_position_window,
+            loading_blocked: false,
+            loading_manual: false,
+        }
+    }
 }
 
 /// Global safety configuration.

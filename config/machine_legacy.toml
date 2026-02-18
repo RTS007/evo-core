@@ -1,0 +1,65 @@
+# EVO HAL Machine Configuration
+# Example configuration for simulation testing
+
+# System cycle time in microseconds (1ms = 1000us)
+cycle_time_us = 1000
+
+# State persistence file
+state_file = "hal_state"
+
+# Drivers to load (simulation cannot be mixed with others)
+drivers = ["simulation"]
+
+# Axis configuration files (paths relative to this config file)
+axes = [
+    "axis_01.toml",
+    "axis_02.toml",
+]
+
+# Simulation driver configuration
+[driver_config.simulation]
+enable_physics = true
+
+# Digital inputs
+[[digital_inputs]]
+name = "di_cylinder_closed"
+initial_value = true
+
+[[digital_inputs]]
+name = "di_cylinder_open"
+initial_value = false
+
+[[digital_inputs]]
+name = "di_safety_gate"
+initial_value = true
+
+# Digital outputs with linked input reactions
+[[digital_outputs]]
+name = "do_cylinder_extend"
+linked_inputs = []
+
+[[digital_outputs]]
+name = "do_light_tower_green"
+linked_inputs = []
+
+# Analog inputs
+[[analog_inputs]]
+name = "ai_pressure"
+min_value = 0.0
+max_value = 10.0
+unit = "bar"
+initial_value = 6.0
+
+[[analog_inputs]]
+name = "ai_temperature"
+min_value = -20.0
+max_value = 80.0
+unit = "°C"
+initial_value = 25.0
+
+# Analog outputs
+[[analog_outputs]]
+name = "ao_valve_position"
+min_value = 0.0
+max_value = 100.0
+unit = "%"

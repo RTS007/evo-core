@@ -1,0 +1,48 @@
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║  EVO SYSTEM            Parameters for starting and running the EVO system. ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+# ┌─── [watchdog] ─────────────────────────────────────────────────────────────┐
+# │  max_restarts        Max consecutive restarts                (u32, def: 5) │
+# │  initial_backoff_ms  Initial restart delay ms              (u64, def: 100) │
+# │  max_backoff_s       Max restart delay sec                  (u64, def: 30) │
+# │  stable_run_s        Stable run reset sec                   (u64, def: 60) │
+# │  sigterm_timeout_s   SIGTERM timeout sec                   (f64, def: 2.0) │
+# │  hal_ready_timeout_s HAL ready timeout sec                 (f64, def: 5.0) │
+# └────────────────────────────────────────────────────────────────────────────┘
+#
+# ┌─── [hal], [cu], [re], ... ─────────────────────────────────────────────────┐
+# │  Placeholder sections for per-program configuration.                       │
+# │  Future: cycle_time_us, driver settings, state machine params.             │
+# └────────────────────────────────────────────────────────────────────────────┘
+
+[watchdog]
+max_restarts = 5
+initial_backoff_ms = 100
+max_backoff_s = 30
+stable_run_s = 60
+sigterm_timeout_s = 2.0
+hal_ready_timeout_s = 5.0
+
+[hal]
+# Future: cycle_time_us, driver settings
+
+[cu]
+# Future: cycle_time_us, state machine params
+
+[re]
+# Placeholder
+
+[mqtt]
+# Placeholder
+
+[grpc]
+# Placeholder
+
+[api]
+# Placeholder
+
+[dashboard]
+# Placeholder
+
+[diagnostic]
+# Placeholder

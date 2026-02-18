@@ -2,15 +2,9 @@
 //!
 //! These constants define the fundamental parameters for the EVO shared memory system.
 //! They are the single source of truth - all other crates should import from here.
-
-/// Magic number for SHM segment validation.
-///
-/// This is the ASCII representation of "EVO_SHM\0" and is used to verify
-/// that a memory segment is a valid EVO shared memory segment.
-///
-/// # Value
-/// `0x45564F5F53484D00` = "EVO_SHM\0" in ASCII
-pub const EVO_SHM_MAGIC: u64 = 0x45564F5F53484D00;
+//!
+//! Note: The P2P magic constant lives in `evo_common::shm::p2p::EVO_P2P_MAGIC`.
+//! The P2P protocol is the sole SHM transport.
 
 /// Minimum shared memory segment size in bytes.
 ///
@@ -33,12 +27,6 @@ pub const CACHE_LINE_SIZE: usize = 64;
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_evo_shm_magic_value() {
-        // "EVO_SHM\0" = 0x45 0x56 0x4F 0x5F 0x53 0x48 0x4D 0x00
-        assert_eq!(EVO_SHM_MAGIC, 0x45564F5F53484D00);
-    }
 
     #[test]
     fn test_shm_min_size_is_page_size() {

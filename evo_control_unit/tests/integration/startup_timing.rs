@@ -13,8 +13,8 @@ use evo_common::io::registry::IoRegistry;
 use evo_control_unit::config::{validate_io_completeness, validate_machine_config};
 use evo_control_unit::cycle::RuntimeState;
 
-const MACHINE_TOML: &str = include_str!("../../../config/test_8axis.toml");
-const IO_TOML: &str = include_str!("../../../config/test_io.toml");
+const MACHINE_TOML: &str = include_str!("../fixtures/test_8axis.toml");
+const IO_TOML: &str = include_str!("../fixtures/test_io.toml");
 
 /// Measure config parse + validate + RuntimeState init for 8 axes.
 #[test]

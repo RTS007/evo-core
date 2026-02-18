@@ -8,9 +8,9 @@
 //! # Module Structure
 //!
 //! - [`core`] - HalCore struct, RT loop management
-//! - [`shm`] - SHM initialization and access
 //! - [`driver_registry`] - Driver factory registration
 //! - [`drivers`] - HAL driver implementations
+//! - [`module_status`] - Module status publishing (stub)
 //!
 //! # Architecture
 //!
@@ -18,8 +18,8 @@
 //! ┌──────────────────────────────────────────────────────────────────┐
 //! │                     evo_hal (single crate)                       │
 //! │  ┌─────────────┐    ┌──────────────┐    ┌─────────────────────┐  │
-//! │  │   SHM       │◄──►│  HalCore     │◄──►│  Driver Registry    │  │
-//! │  │   Layout    │    │  (RT Loop)   │    │                     │  │
+//! │  │   P2P SHM   │◄──►│  HalCore     │◄──►│  Driver Registry    │  │
+//! │  │  (evo_common)│    │  (RT Loop)   │    │                     │  │
 //! │  └─────────────┘    └──────┬───────┘    └─────────────────────┘  │
 //! │                            │                                     │
 //! │                            ▼                                     │
@@ -37,10 +37,8 @@ pub mod core;
 pub mod driver_registry;
 pub mod drivers;
 pub mod module_status;
-pub mod shm;
 
 // Re-export key types for convenience
 pub use crate::core::HalCore;
-pub use crate::driver_registry::{get_driver_factory, register_driver};
+pub use crate::driver_registry::{get_driver_factory, register_driver, DriverRegistry};
 pub use crate::module_status::ModuleStatusPublisher;
-pub use crate::shm::{HalShmData, HalShmHeader};

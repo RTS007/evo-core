@@ -1,0 +1,43 @@
+# ╔══════════════════════════════════════════════════════════════════╗
+# ║  AXIS 04 — A-Axis (Rotary)                                      ║
+# ╚══════════════════════════════════════════════════════════════════╝
+
+[axis]
+id = 4
+name = "A-Axis"
+type = "rotary"
+
+[kinematics]
+max_velocity = 360.0
+safe_reduced_speed_limit = 36.0
+min_pos = 0.0
+max_pos = 360.0
+in_position_window = 0.01
+
+[control]
+kp = 60.0
+ki = 10.0
+kd = 0.3
+tf = 0.001
+tt = 0.01
+kvff = 0.6
+out_max = 50.0
+lag_error_limit = 0.2
+lag_policy = "Error"
+
+[safe_stop]
+category = "SS1"
+max_decel_safe = 15000.0
+
+[homing]
+method = "IndexPulse"
+speed = 10.0
+torque_limit = 25.0
+timeout = 60.0
+approach_direction = "Positive"
+
+[brake]
+do_brake = "BrakeOut4"
+di_released = "BrakeIn4"
+release_timeout = 2.0
+engage_timeout = 1.0

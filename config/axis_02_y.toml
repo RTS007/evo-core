@@ -1,0 +1,45 @@
+# ╔══════════════════════════════════════════════════════════════════╗
+# ║  AXIS 02 — Y-Axis (Linear)                                      ║
+# ╚══════════════════════════════════════════════════════════════════╝
+
+[axis]
+id = 2
+name = "Y-Axis"
+type = "linear"
+
+[kinematics]
+max_velocity = 500.0
+safe_reduced_speed_limit = 50.0
+min_pos = -100.0
+max_pos = 600.0
+in_position_window = 0.05
+
+[control]
+kp = 100.0
+ki = 20.0
+kd = 0.5
+tf = 0.001
+tt = 0.01
+kvff = 0.8
+kaff = 0.001
+friction = 0.4
+out_max = 100.0
+lag_error_limit = 0.5
+lag_policy = "Unwanted"
+
+[safe_stop]
+category = "SS1"
+max_decel_safe = 10000.0
+
+[homing]
+method = "HomeSensor"
+speed = 20.0
+torque_limit = 30.0
+timeout = 30.0
+approach_direction = "Negative"
+
+[brake]
+do_brake = "BrakeOut2"
+di_released = "BrakeIn2"
+release_timeout = 2.0
+engage_timeout = 1.0

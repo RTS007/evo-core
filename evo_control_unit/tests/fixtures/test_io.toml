@@ -1,0 +1,131 @@
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║  I/O Configuration — 8-Axis Test Reference (SC-002/SC-004)                 ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+#
+# All required roles for 8-axis test config:
+# - Global: EStop
+# - Per-axis: LimitMin/Max for all 8 axes
+# - Homing: Ref1, Ref2 (HomeSensor), Ref4 + Index4 (IndexPulse)
+# - Brakes: BrakeOut/BrakeIn for axes 1-4
+# - Tailstock: TailClosed3, TailOpen3
+# - Guard: GuardClosed3, GuardLocked3
+
+[Safety]
+name = "Safety circuits"
+io = [
+    { type = "di", role = "EStop",       pin = 1, logic = "NC", debounce = 100, name = "Main E-Stop", sim = 1.0 },
+    { type = "di", role = "SafetyGate",  pin = 2, logic = "NC", debounce = 50,  name = "Light curtain" },
+    { type = "di", role = "Start",       pin = 3, debounce = 20, enable_pin = 4, enable_state = true, enable_timeout = 500, name = "Start (left)" },
+    { type = "di",                       pin = 4, debounce = 20, name = "Start Enable (right)" },
+]
+
+[Axis1_Limits]
+name = "Axis 1 limit switches"
+io = [
+    { type = "di", role = "LimitMin1", pin = 30, logic = "NC", name = "Limit switch 1-" },
+    { type = "di", role = "LimitMax1", pin = 31, logic = "NC", name = "Limit switch 1+" },
+    { type = "di", role = "Ref1",      pin = 32, debounce = 30, name = "Homing sensor axis 1" },
+]
+
+[Axis2_Limits]
+name = "Axis 2 limit switches"
+io = [
+    { type = "di", role = "LimitMin2", pin = 33, logic = "NC", name = "Limit switch 2-" },
+    { type = "di", role = "LimitMax2", pin = 34, logic = "NC", name = "Limit switch 2+" },
+    { type = "di", role = "Ref2",      pin = 35, debounce = 30, name = "Homing sensor axis 2" },
+]
+
+[Axis3_Limits]
+name = "Axis 3 limit switches"
+io = [
+    { type = "di", role = "LimitMin3", pin = 36, logic = "NC", name = "Limit switch 3-" },
+    { type = "di", role = "LimitMax3", pin = 37, logic = "NC", name = "Limit switch 3+" },
+]
+
+[Axis4_Limits]
+name = "Axis 4 limit switches"
+io = [
+    { type = "di", role = "LimitMin4", pin = 38, logic = "NC", name = "Limit switch 4-" },
+    { type = "di", role = "LimitMax4", pin = 39, logic = "NC", name = "Limit switch 4+" },
+    { type = "di", role = "Ref4",      pin = 40, debounce = 30, name = "Homing sensor axis 4" },
+]
+
+[Axis5_Limits]
+name = "Axis 5 limit switches"
+io = [
+    { type = "di", role = "LimitMin5", pin = 41, logic = "NC", name = "Limit switch 5-" },
+    { type = "di", role = "LimitMax5", pin = 42, logic = "NC", name = "Limit switch 5+" },
+]
+
+[Axis6_Limits]
+name = "Axis 6 limit switches"
+io = [
+    { type = "di", role = "LimitMin6", pin = 43, logic = "NC", name = "Limit switch 6-" },
+    { type = "di", role = "LimitMax6", pin = 44, logic = "NC", name = "Limit switch 6+" },
+]
+
+[Axis7_Limits]
+name = "Axis 7 limit switches"
+io = [
+    { type = "di", role = "LimitMin7", pin = 45, logic = "NC", name = "Limit switch 7-" },
+    { type = "di", role = "LimitMax7", pin = 46, logic = "NC", name = "Limit switch 7+" },
+]
+
+[Axis8_Limits]
+name = "Axis 8 limit switches"
+io = [
+    { type = "di", role = "LimitMin8", pin = 47, logic = "NC", name = "Limit switch 8-" },
+    { type = "di", role = "LimitMax8", pin = 48, logic = "NC", name = "Limit switch 8+" },
+]
+
+[Brakes]
+name = "Brake outputs and confirmations"
+io = [
+    { type = "do", role = "BrakeOut1", pin = 100, name = "Brake release axis 1" },
+    { type = "di", role = "BrakeIn1",  pin = 50,  name = "Brake released axis 1" },
+    { type = "do", role = "BrakeOut2", pin = 101, name = "Brake release axis 2" },
+    { type = "di", role = "BrakeIn2",  pin = 51,  name = "Brake released axis 2" },
+    { type = "do", role = "BrakeOut3", pin = 102, name = "Brake release axis 3" },
+    { type = "di", role = "BrakeIn3",  pin = 52,  name = "Brake released axis 3" },
+    { type = "do", role = "BrakeOut4", pin = 103, name = "Brake release axis 4" },
+    { type = "di", role = "BrakeIn4",  pin = 53,  name = "Brake released axis 4" },
+]
+
+[Axis3_Peripherals]
+name = "Axis 3 tailstock + guard"
+io = [
+    { type = "di", role = "TailClosed3",  pin = 60, logic = "NC", name = "Tailstock closed axis 3" },
+    { type = "di", role = "TailOpen3",    pin = 61, name = "Tailstock open axis 3" },
+    { type = "di", role = "GuardClosed3", pin = 62, logic = "NC", name = "Guard closed axis 3" },
+    { type = "di", role = "GuardLocked3", pin = 63, logic = "NC", name = "Guard locked axis 3" },
+]
+
+[Axis8_Peripherals]
+name = "Axis 8 tailstock"
+io = [
+    { type = "di", role = "TailClosed8",  pin = 70, logic = "NC", name = "Tailstock closed axis 8" },
+    { type = "di", role = "TailOpen8",    pin = 71, name = "Tailstock open axis 8" },
+]
+
+[Axis4_Homing]
+name = "Axis 4 index pulse"
+io = [
+    { type = "di", role = "Index4", pin = 64, name = "Index pulse axis 4" },
+]
+
+[Operator_Panel]
+name = "Operator panel"
+io = [
+    { type = "di", pin = 20, debounce = 20, name = "START button" },
+    { type = "di", pin = 21, debounce = 20, name = "STOP button" },
+    { type = "di", pin = 22, debounce = 20, name = "RESET button" },
+    { type = "do", pin = 110, name = "RUN lamp (green)" },
+    { type = "do", pin = 111, name = "ERROR lamp (red)" },
+]
+
+[Diagnostics]
+name = "Diagnostic sensors"
+io = [
+    { type = "ai", pin = 0, min = -20.0, max = 120.0, unit = "°C", average = 30, sim = 22.0, name = "Oil temperature" },
+    { type = "ai", pin = 1, min = 0.0, max = 30.0, unit = "VDC", average = 10, sim = 24.0, name = "24V supply voltage" },
+]

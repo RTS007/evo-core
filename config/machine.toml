@@ -1,65 +1,34 @@
-# EVO HAL Machine Configuration
-# Example configuration for simulation testing
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║  MACHINE CONFIGURATION                                                     ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+#
+# Machine-specific parameters. Axis configs are auto-discovered
+# from axis_NN_*.toml files in this same directory.
+# I/O definitions live in io.toml.
+#
+# ┌─── [machine] ──────────────────────────────────────────────────────────────┐
+# │  name     Machine display name                          (string, REQUIRED) │
+# └────────────────────────────────────────────────────────────────────────────┘
+#
+# ┌─── [global_safety] ────────────────────────────────────────────────────────┐
+# │  default_safe_stop               "SS1"|"SS2"|"STO"              (REQUIRED) │
+# │  safety_stop_timeout             Timeout in seconds             (REQUIRED) │
+# │  recovery_authorization_required                           bool (REQUIRED) │
+# └────────────────────────────────────────────────────────────────────────────┘
+#
+# ┌─── [service_bypass] ───────────────────────────────────────────────────────┐
+# │  bypass_axes          Array of axis IDs                         (REQUIRED) │
+# │  max_service_velocity Max velocity in service                   (REQUIRED) │
+# └────────────────────────────────────────────────────────────────────────────┘
 
-# System cycle time in microseconds (1ms = 1000us)
-cycle_time_us = 1000
+[machine]
+name = "Test 8-Axis CNC"
 
-# State persistence file
-state_file = "hal_state"
+[global_safety]
+default_safe_stop = "SS1"
+safety_stop_timeout = 5.0
+recovery_authorization_required = true
 
-# Drivers to load (simulation cannot be mixed with others)
-drivers = ["simulation"]
-
-# Axis configuration files (paths relative to this config file)
-axes = [
-    "axis_01.toml",
-    "axis_02.toml",
-]
-
-# Simulation driver configuration
-[driver_config.simulation]
-enable_physics = true
-
-# Digital inputs
-[[digital_inputs]]
-name = "di_cylinder_closed"
-initial_value = true
-
-[[digital_inputs]]
-name = "di_cylinder_open"
-initial_value = false
-
-[[digital_inputs]]
-name = "di_safety_gate"
-initial_value = true
-
-# Digital outputs with linked input reactions
-[[digital_outputs]]
-name = "do_cylinder_extend"
-linked_inputs = []
-
-[[digital_outputs]]
-name = "do_light_tower_green"
-linked_inputs = []
-
-# Analog inputs
-[[analog_inputs]]
-name = "ai_pressure"
-min_value = 0.0
-max_value = 10.0
-unit = "bar"
-initial_value = 6.0
-
-[[analog_inputs]]
-name = "ai_temperature"
-min_value = -20.0
-max_value = 80.0
-unit = "°C"
-initial_value = 25.0
-
-# Analog outputs
-[[analog_outputs]]
-name = "ao_valve_position"
-min_value = 0.0
-max_value = 100.0
-unit = "%"
+[service_bypass]
+bypass_axes = [1, 2, 3, 4, 5, 6, 7, 8]
+max_service_velocity = 50.0

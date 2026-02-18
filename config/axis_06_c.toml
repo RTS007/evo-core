@@ -1,0 +1,35 @@
+# ╔══════════════════════════════════════════════════════════════════╗
+# ║  AXIS 06 — C-Axis (Rotary)                                      ║
+# ╚══════════════════════════════════════════════════════════════════╝
+
+[axis]
+id = 6
+name = "C-Axis"
+type = "rotary"
+
+[kinematics]
+max_velocity = 360.0
+safe_reduced_speed_limit = 36.0
+min_pos = 0.0
+max_pos = 360.0
+in_position_window = 0.01
+
+[control]
+kp = 50.0
+ki = 8.0
+kd = 0.2
+tf = 0.001
+tt = 0.01
+out_max = 50.0
+lag_error_limit = 0.3
+lag_policy = "Unwanted"
+
+[safe_stop]
+category = "SS1"
+max_decel_safe = 12000.0
+
+[homing]
+method = "HomeSensor"
+speed = 10.0
+timeout = 30.0
+approach_direction = "Positive"

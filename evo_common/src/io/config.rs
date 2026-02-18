@@ -11,15 +11,41 @@ use super::role::{DiLogic, IoPointType};
 
 /// Scaling curve for analog I/O.
 ///
-/// `f(n) = a·n³ + b·n² + c·n + offset`
+/// All curves are polynomials: `f(n) = a·n³ + b·n² + c·n + d`
 /// where `n = (raw - min) / (max - min)` (normalized 0.0–1.0).
+///
+/// Supports three deserialization formats (TOML):
+/// - Named preset string: `curve = "linear"`
+/// - Compact coefficients array: `curve = [a, b, c]` (d defaults to 0)
+/// - Full polynomial table: `[curve] a = 0.0, b = 1.0, c = 0.0, d = 0.0`
+///
+/// Constraint for named presets: `a + b + c + d = 1.0` (ensures `f(1) = 1`).
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum AnalogCurve {
     /// Named preset: `"linear"`, `"quadratic"`, `"cubic"`.
     Preset(CurvePreset),
-    /// Custom polynomial coefficients `[a, b, c]`.
+    /// Full polynomial coefficients `{ a, b, c, d }`.
+    Polynomial {
+        /// Cubic coefficient (n³).
+        #[serde(default)]
+        a: f64,
+        /// Quadratic coefficient (n²).
+        #[serde(default)]
+        b: f64,
+        /// Linear coefficient (n).
+        #[serde(default = "default_one")]
+        c: f64,
+        /// Constant offset.
+        #[serde(default)]
+        d: f64,
+    },
+    /// Compact polynomial coefficients `[a, b, c]` (d=0 implied).
     Custom([f64; 3]),
+}
+
+fn default_one() -> f64 {
+    1.0
 }
 
 impl Default for AnalogCurve {
@@ -29,18 +55,106 @@ impl Default for AnalogCurve {
 }
 
 impl AnalogCurve {
-    /// Evaluate the curve for a normalized input `n` in `[0.0, 1.0]`.
-    pub fn evaluate(&self, n: f64) -> f64 {
-        let (a, b, c) = self.coefficients();
-        a * n * n * n + b * n * n + c * n
+    /// Linear: `f(n) = n`.
+    pub const LINEAR: Self = Self::Polynomial {
+        a: 0.0,
+        b: 0.0,
+        c: 1.0,
+        d: 0.0,
+    };
+
+    /// Quadratic: `f(n) = n²`.
+    pub const QUADRATIC: Self = Self::Polynomial {
+        a: 0.0,
+        b: 1.0,
+        c: 0.0,
+        d: 0.0,
+    };
+
+    /// Cubic: `f(n) = n³`.
+    pub const CUBIC: Self = Self::Polynomial {
+        a: 1.0,
+        b: 0.0,
+        c: 0.0,
+        d: 0.0,
+    };
+
+    /// Create a custom polynomial curve.
+    pub const fn new(a: f64, b: f64, c: f64, d: f64) -> Self {
+        Self::Polynomial { a, b, c, d }
     }
 
-    /// Extract polynomial coefficients `(a, b, c)`.
-    pub fn coefficients(&self) -> (f64, f64, f64) {
+    /// Extract polynomial coefficients `(a, b, c, d)`.
+    pub fn coefficients(&self) -> (f64, f64, f64, f64) {
         match self {
-            Self::Preset(p) => p.coefficients(),
-            Self::Custom([a, b, c]) => (*a, *b, *c),
+            Self::Preset(p) => {
+                let (a, b, c) = p.coefficients();
+                (a, b, c, 0.0)
+            }
+            Self::Polynomial { a, b, c, d } => (*a, *b, *c, *d),
+            Self::Custom([a, b, c]) => (*a, *b, *c, 0.0),
         }
+    }
+
+    /// Evaluate the curve for a normalized input `n` in `[0.0, 1.0]`.
+    ///
+    /// `f(n) = a·n³ + b·n² + c·n + d`
+    #[inline]
+    pub fn evaluate(&self, n: f64) -> f64 {
+        let (a, b, c, d) = self.coefficients();
+        a * n * n * n + b * n * n + c * n + d
+    }
+
+    /// Alias for `evaluate()` — used by HAL simulation driver.
+    #[inline]
+    pub fn eval(&self, n: f64) -> f64 {
+        self.evaluate(n)
+    }
+
+    /// Convert normalized (0.0–1.0) to scaled value.
+    pub fn to_scaled(&self, normalized: f64, min: f64, max: f64) -> f64 {
+        min + self.evaluate(normalized) * (max - min)
+    }
+
+    /// Convert scaled value to normalized (0.0–1.0).
+    /// Uses Newton-Raphson for non-linear curves.
+    pub fn to_normalized(&self, scaled: f64, min: f64, max: f64) -> f64 {
+        let range = max - min;
+        if range.abs() < f64::EPSILON {
+            return 0.0;
+        }
+        let target = (scaled - min) / range;
+        let (a, b, c, d) = self.coefficients();
+
+        // For linear (c=1, others=0), direct solution.
+        if a == 0.0 && b == 0.0 && d == 0.0 && c.abs() > f64::EPSILON {
+            return target / c;
+        }
+
+        // Newton-Raphson iteration for inverse.
+        let mut n = target; // initial guess
+        for _ in 0..10 {
+            let f = a * n * n * n + b * n * n + c * n + d - target;
+            let df = 3.0 * a * n * n + 2.0 * b * n + c;
+            if df.abs() < f64::EPSILON {
+                break;
+            }
+            n -= f / df;
+            n = n.clamp(0.0, 1.0);
+        }
+        n
+    }
+
+    /// Validate coefficients sum to 1.0 (ensures `f(1) = 1`).
+    pub fn validate(&self) -> Result<(), String> {
+        let (a, b, c, d) = self.coefficients();
+        let sum = a + b + c + d;
+        if (sum - 1.0).abs() > 0.001 {
+            return Err(format!(
+                "Polynomial coefficients must sum to 1.0, got {sum}"
+            ));
+        }
+        Ok(())
     }
 }
 

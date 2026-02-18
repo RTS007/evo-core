@@ -8,6 +8,7 @@
 
 use crate::hal::consts::{MAX_AI, MAX_AO, MAX_AXES, MAX_DI, MAX_DO};
 use crate::hal::driver::HalError;
+use crate::io::config::AnalogCurve;
 use crate::prelude::DEFAULT_CYCLE_TIME_US;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -517,125 +518,6 @@ pub struct AnalogIOConfig {
 
 fn default_max_value() -> f64 {
     1.0
-}
-
-/// Analog scaling curve using polynomial representation.
-///
-/// All curves are polynomials: f(n) = a×n³ + b×n² + c×n + d
-/// where n = normalized value (0.0-1.0)
-///
-/// Constraint: a + b + c + d = 1.0 (ensures f(1) = 1)
-///
-/// Named presets:
-/// - "linear": a=0, b=0, c=1, d=0
-/// - "quadratic": a=0, b=1, c=0, d=0
-/// - "cubic": a=1, b=0, c=0, d=0
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct AnalogCurve {
-    /// Cubic coefficient (n³)
-    #[serde(default)]
-    pub a: f64,
-    /// Quadratic coefficient (n²)
-    #[serde(default)]
-    pub b: f64,
-    /// Linear coefficient (n)
-    #[serde(default = "default_one")]
-    pub c: f64,
-    /// Constant offset
-    #[serde(default)]
-    pub d: f64,
-}
-
-fn default_one() -> f64 {
-    1.0
-}
-
-impl Default for AnalogCurve {
-    fn default() -> Self {
-        Self::LINEAR
-    }
-}
-
-impl AnalogCurve {
-    /// Linear: f(n) = n
-    pub const LINEAR: Self = Self {
-        a: 0.0,
-        b: 0.0,
-        c: 1.0,
-        d: 0.0,
-    };
-
-    /// Quadratic: f(n) = n²
-    pub const QUADRATIC: Self = Self {
-        a: 0.0,
-        b: 1.0,
-        c: 0.0,
-        d: 0.0,
-    };
-
-    /// Cubic: f(n) = n³
-    pub const CUBIC: Self = Self {
-        a: 1.0,
-        b: 0.0,
-        c: 0.0,
-        d: 0.0,
-    };
-
-    /// Create custom polynomial
-    pub const fn new(a: f64, b: f64, c: f64, d: f64) -> Self {
-        Self { a, b, c, d }
-    }
-
-    /// Evaluate polynomial: f(n) = a×n³ + b×n² + c×n + d
-    #[inline]
-    pub fn eval(&self, n: f64) -> f64 {
-        self.a * n * n * n + self.b * n * n + self.c * n + self.d
-    }
-
-    /// Convert normalized (0.0-1.0) to scaled value
-    pub fn to_scaled(&self, normalized: f64, min: f64, max: f64) -> f64 {
-        min + self.eval(normalized) * (max - min)
-    }
-
-    /// Convert scaled value to normalized (0.0-1.0).
-    /// Uses Newton-Raphson for non-linear curves.
-    pub fn to_normalized(&self, scaled: f64, min: f64, max: f64) -> f64 {
-        let range = max - min;
-        if range.abs() < f64::EPSILON {
-            return 0.0;
-        }
-        let target = (scaled - min) / range;
-
-        // For linear (c=1, others=0), direct solution
-        if self.a == 0.0 && self.b == 0.0 && self.d == 0.0 {
-            return target / self.c;
-        }
-
-        // Newton-Raphson iteration for inverse
-        let mut n = target; // initial guess
-        for _ in 0..10 {
-            let f = self.eval(n) - target;
-            let df = 3.0 * self.a * n * n + 2.0 * self.b * n + self.c;
-            if df.abs() < f64::EPSILON {
-                break;
-            }
-            n -= f / df;
-            n = n.clamp(0.0, 1.0);
-        }
-        n
-    }
-
-    /// Validate coefficients sum to 1.0
-    pub fn validate(&self) -> Result<(), String> {
-        let sum = self.a + self.b + self.c + self.d;
-        if (sum - 1.0).abs() > 0.001 {
-            return Err(format!(
-                "Polynomial coefficients must sum to 1.0, got {}",
-                sum
-            ));
-        }
-        Ok(())
-    }
 }
 
 #[cfg(test)]

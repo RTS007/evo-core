@@ -5,7 +5,8 @@
 //! - Linked DI reactions (DO triggers delayed DI changes)
 //! - Analog inputs and outputs with polynomial scaling
 
-use evo_common::hal::config::{AnalogCurve, AnalogIOConfig, DigitalIOConfig, LinkedDigitalInput};
+use evo_common::hal::config::{AnalogIOConfig, DigitalIOConfig, LinkedDigitalInput};
+use evo_common::io::config::AnalogCurve;
 use evo_common::hal::types::AnalogValue;
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
@@ -48,9 +49,11 @@ pub struct IOSimulator {
     ai_states: Vec<AnalogState>,
     /// Analog output states
     ao_states: Vec<AnalogState>,
-    /// Analog input configurations (for scaling)
+    /// Analog input configurations (for scaling — used in test-only methods)
+    #[cfg_attr(not(test), allow(dead_code))]
     ai_configs: Vec<AnalogScalingConfig>,
     /// Analog output configurations (for scaling)
+    #[cfg_attr(not(test), allow(dead_code))]
     ao_configs: Vec<AnalogScalingConfig>,
 }
 
@@ -279,20 +282,15 @@ impl IOSimulator {
         }
     }
 
-    /// Set a specific digital input state (for testing/manual override).
-    pub fn set_di(&mut self, index: usize, value: bool) {
-        if index < self.di_states.len() {
-            self.di_states[index] = value;
-        }
-    }
-
     /// Get current digital input state.
-    pub fn get_di(&self, index: usize) -> Option<bool> {
+    #[cfg(test)]
+    pub(crate) fn get_di(&self, index: usize) -> Option<bool> {
         self.di_states.get(index).copied()
     }
 
     /// Set analog input value (normalized).
-    pub fn set_ai_normalized(&mut self, index: usize, normalized: f64) {
+    #[cfg(test)]
+    pub(crate) fn set_ai_normalized(&mut self, index: usize, normalized: f64) {
         if index < self.ai_states.len() {
             let config = &self.ai_configs[index];
             let scaled = config
@@ -303,7 +301,8 @@ impl IOSimulator {
     }
 
     /// Set analog input value (scaled/engineering units).
-    pub fn set_ai_scaled(&mut self, index: usize, scaled: f64) {
+    #[cfg(test)]
+    pub(crate) fn set_ai_scaled(&mut self, index: usize, scaled: f64) {
         if index < self.ai_states.len() {
             let config = &self.ai_configs[index];
             let normalized = config
@@ -314,7 +313,8 @@ impl IOSimulator {
     }
 
     /// Get analog input value.
-    pub fn get_ai(&self, index: usize) -> Option<AnalogValue> {
+    #[cfg(test)]
+    pub(crate) fn get_ai(&self, index: usize) -> Option<AnalogValue> {
         self.ai_states.get(index).map(|s| AnalogValue {
             normalized: s.normalized,
             scaled: s.scaled,
@@ -322,7 +322,8 @@ impl IOSimulator {
     }
 
     /// Get analog output value.
-    pub fn get_ao(&self, index: usize) -> Option<AnalogValue> {
+    #[cfg(test)]
+    pub(crate) fn get_ao(&self, index: usize) -> Option<AnalogValue> {
         self.ao_states.get(index).map(|s| AnalogValue {
             normalized: s.normalized,
             scaled: s.scaled,
@@ -330,22 +331,26 @@ impl IOSimulator {
     }
 
     /// Get count of digital inputs.
-    pub fn di_count(&self) -> usize {
+    #[cfg(test)]
+    pub(crate) fn di_count(&self) -> usize {
         self.di_states.len()
     }
 
     /// Get count of digital outputs.
-    pub fn do_count(&self) -> usize {
+    #[cfg(test)]
+    pub(crate) fn do_count(&self) -> usize {
         self.do_states.len()
     }
 
     /// Get count of analog inputs.
-    pub fn ai_count(&self) -> usize {
+    #[cfg(test)]
+    pub(crate) fn ai_count(&self) -> usize {
         self.ai_states.len()
     }
 
     /// Get count of analog outputs.
-    pub fn ao_count(&self) -> usize {
+    #[cfg(test)]
+    pub(crate) fn ao_count(&self) -> usize {
         self.ao_states.len()
     }
 }

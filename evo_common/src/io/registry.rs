@@ -240,6 +240,18 @@ pub struct IoRegistry {
     pub ao_count: u16,
 }
 
+impl Default for IoRegistry {
+    fn default() -> Self {
+        Self {
+            bindings: HashMap::new(),
+            di_count: 0,
+            do_count: 0,
+            ai_count: 0,
+            ao_count: 0,
+        }
+    }
+}
+
 impl IoRegistry {
     /// Build the registry from an `IoConfig`, running all validation rules.
     ///
@@ -480,6 +492,14 @@ impl IoRegistry {
         };
         ao_values[binding.pin as usize] = normalized;
         Some(())
+    }
+
+    /// Check if a specific pin of a given I/O type is owned by any role.
+    ///
+    /// Used for I/O role ownership enforcement: HAL rejects direct I/O
+    /// commands (e.g., from RE) targeting role-assigned pins (FR-036).
+    pub fn pin_is_role_owned(&self, io_type: IoPointType, pin: u16) -> bool {
+        self.bindings.values().any(|b| b.io_type == io_type && b.pin == pin)
     }
 
     // ─── Validation Helpers (V-IO-4, V-IO-5) ───────────────────────

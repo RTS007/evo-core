@@ -1,0 +1,59 @@
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║  AXIS 01 — X-Axis (Linear)                                                 ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+#
+# ┌─── [axis] ─────────────────────────────────────────────────────────────────┐
+# │  id    Axis number (must match NN in filename)              (u8, REQUIRED) │
+# │  name  Display name                                     (string, REQUIRED) │
+# │  type  "linear" or "rotary"                             (string, REQUIRED) │
+# └────────────────────────────────────────────────────────────────────────────┘
+
+[axis]
+id = 1
+name = "X-Axis"
+type = "linear"
+
+[kinematics]
+max_velocity = 500.0
+safe_reduced_speed_limit = 50.0
+min_pos = -100.0
+max_pos = 1000.0
+in_position_window = 0.05
+
+[control]
+kp = 100.0
+ki = 20.0
+kd = 0.5
+tf = 0.001
+tt = 0.01
+kvff = 0.8
+kaff = 0.001
+friction = 0.5
+jn = 0.01
+bn = 0.001
+gdob = 200.0
+f_notch = 800.0
+bw_notch = 50.0
+flp = 500.0
+out_max = 100.0
+lag_error_limit = 0.5
+lag_policy = "Unwanted"
+
+[safe_stop]
+category = "SS1"
+max_decel_safe = 10000.0
+sto_brake_delay = 0.1
+ss2_holding_torque = 20.0
+
+[homing]
+method = "HomeSensor"
+speed = 20.0
+torque_limit = 30.0
+timeout = 30.0
+approach_direction = "Positive"
+
+[brake]
+do_brake = "BrakeOut1"
+di_released = "BrakeIn1"
+release_timeout = 2.0
+engage_timeout = 1.0

@@ -27,6 +27,19 @@ target
 **/.github/agents/
 **/.github/prompts/
 
+# Environment and secrets
+.env*
+!.env.example
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+
 # Specify
 **/.specify/scripts/
 **/.specify/templates/

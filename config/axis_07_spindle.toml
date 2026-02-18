@@ -1,0 +1,44 @@
+# ╔══════════════════════════════════════════════════════════════════╗
+# ║  AXIS 07 — Spindle (High-Speed Rotary)                          ║
+# ╚══════════════════════════════════════════════════════════════════╝
+
+[axis]
+id = 7
+name = "Spindle"
+type = "rotary"
+
+[kinematics]
+max_velocity = 24000.0
+safe_reduced_speed_limit = 1200.0
+min_pos = 0.0
+max_pos = 360.0
+in_position_window = 1.0
+
+[control]
+kp = 200.0
+ki = 50.0
+kd = 1.0
+tf = 0.0005
+tt = 0.005
+kvff = 0.95
+kaff = 0.002
+friction = 2.0
+jn = 0.05
+bn = 0.01
+gdob = 500.0
+f_notch = 1200.0
+bw_notch = 100.0
+flp = 800.0
+out_max = 200.0
+lag_error_limit = 5.0
+lag_policy = "Warning"
+
+[safe_stop]
+category = "SS1"
+max_decel_safe = 50000.0
+
+[homing]
+method = "HomeSensor"
+speed = 100.0
+timeout = 10.0
+approach_direction = "Positive"

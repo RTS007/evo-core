@@ -8,19 +8,20 @@ default = []
 rt = []  # Enable PREEMPT_RT scheduling (production only)
 
 [dependencies]
-evo_common = { path = "../evo_common" }
-evo_shared_memory = { path = "../evo_shared_memory" }
-serde = { version = "1.0", features = ["derive"] }
-toml = "0.9"
-nix = { version = "0.29", features = ["sched", "mman", "time", "signal"] }
-libc = "0.2"
-heapless = { version = "0.8", features = ["serde"] }
-bitflags = "2.9"
-static_assertions = "1.1"
+evo_common = { workspace = true }
+serde = { workspace = true }
+toml = { workspace = true }
+nix = { workspace = true }
+libc = { workspace = true }
+heapless = { workspace = true }
+clap = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+ctrlc = "3.4"
 
 [dev-dependencies]
-criterion = { version = "0.5", features = ["html_reports"] }
-tempfile = "3.20"
+criterion = { workspace = true }
+tempfile = { workspace = true }
 
 [[bench]]
 name = "cycle_benchmark"

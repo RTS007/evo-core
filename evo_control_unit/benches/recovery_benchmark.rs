@@ -9,7 +9,8 @@
 //! so we measure the pure computation time — I/O and SHM latency are
 //! not included).
 
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use criterion::{Criterion, criterion_group, criterion_main};
+use std::hint::black_box;
 
 use evo_common::control_unit::safety::{AxisSafetyState, SafeStopConfig};
 use evo_common::control_unit::state::{MachineState, SafeStopCategory};

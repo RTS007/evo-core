@@ -1,8 +1,6 @@
 //! SHM integration root.
 //!
-//! P2P segment connection, lifecycle management, inbound reading,
-//! and outbound writing with heartbeat and lock-free protocol.
+//! P2P segment connection and lifecycle management using
+//! `TypedP2pWriter`/`TypedP2pReader` from `evo_common::shm::p2p`.
 
-pub mod reader;
 pub mod segments;
-pub mod writer;

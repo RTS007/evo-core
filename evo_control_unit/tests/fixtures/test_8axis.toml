@@ -1,0 +1,46 @@
+[[axes]]
+axis_id = 1
+name = "X-Axis"
+max_velocity = 500.0
+
+[[axes]]
+axis_id = 2
+name = "Y-Axis"
+max_velocity = 500.0
+
+[[axes]]
+axis_id = 3
+name = "Z-Axis"
+max_velocity = 300.0
+
+[[axes]]
+axis_id = 4
+name = "A-Axis"
+max_velocity = 180.0
+
+[[axes]]
+axis_id = 5
+name = "B-Axis"
+max_velocity = 120.0
+
+[[axes]]
+axis_id = 6
+name = "C-Axis"
+max_velocity = 90.0
+
+[[axes]]
+axis_id = 7
+name = "Spindle"
+max_velocity = 10000.0
+
+[[axes]]
+axis_id = 8
+name = "Tailstock"
+max_velocity = 40.0
+
+[axes.coupling]
+master_axis = 3
+slave_axes = []
+coupling_ratio = 1.0
+sync_timeout = 5.0
+max_lag_diff = 1.0

@@ -172,10 +172,10 @@ fn idle_to_manual_to_idle() {
 
 #[test]
 fn reference_8axis_config_parses() {
-    // T092: Validate the reference configs in config/ parse correctly.
-    let cu_toml = include_str!("../../../config/test_cu.toml");
-    let machine_toml = include_str!("../../../config/test_8axis.toml");
-    let io_toml = include_str!("../../../config/test_io.toml");
+    // T092: Validate the reference test fixtures parse correctly.
+    let cu_toml = include_str!("../fixtures/test_cu.toml");
+    let machine_toml = include_str!("../fixtures/test_8axis.toml");
+    let io_toml = include_str!("../fixtures/test_io.toml");
 
     let result = load_config_from_strings(cu_toml, machine_toml, io_toml);
     assert!(result.is_ok(), "reference config parse failed: {:?}", result.err());

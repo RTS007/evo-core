@@ -1,0 +1,159 @@
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║  IO CONFIGURATION - MACHINE XYZ                                            ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+#
+# ┌─── IO TYPES (type) ────────────────────────────────────────────────────────┐
+# │  "di"              Digital Input                                           │
+# │  "do"              Digital Output                                          │
+# │  "ai"              Analog Input                                            │
+# │  "ao"              Analog Output                                           │
+# └────────────────────────────────────────────────────────────────────────────┘
+#
+# ┌─── GROUP PARAMETERS ───────────────────────────────────────────────────────┐
+# │  name              Display name for operator                    (optional) │
+# └────────────────────────────────────────────────────────────────────────────┘
+#
+# ┌─── COMMON PARAMETERS ──────────────────────────────────────────────────────┐
+# │  pin               Pin number                                   (REQUIRED) │
+# │  role              System role defined in HAL/CU code           (optional) │
+# │  name              Display label for operator                   (optional) │
+# │  sim               Simulation value (di/do: bool, ai/ao: float) (optional) │
+# └────────────────────────────────────────────────────────────────────────────┘
+#
+# ┌─── DIGITAL INPUT (di) ─────────────────────────────────────────────────────┐
+# │  logic             "NO" or "NC"                            (default: "NO") │
+# │  debounce          Contact bounce filter in ms               (default: 15) │
+# │  enable_pin        Conditional enable input pin number          (optional) │
+# │  enable_state      Required enable state: true/false       (w/ enable_pin) │
+# │  enable_timeout    Max time between signals in ms, 0=none  (w/ enable_pin) │
+# └────────────────────────────────────────────────────────────────────────────┘
+#
+# ┌─── DIGITAL OUTPUT (do) ────────────────────────────────────────────────────┐
+# │  init              Logical initial state [before inversion]   (def: false) │
+# │  inverted          Invert logic-to-pin mapping                (def: false) │
+# │  pulse             Watchdog ms, auto-OFF w/o refresh         (def: 0=none) │
+# │  keep_estop        Do NOT reset on E-Stop                     (def: false) │
+# └────────────────────────────────────────────────────────────────────────────┘
+#
+# ┌─── ANALOG INPUT (ai) ──────────────────────────────────────────────────────┐
+# │  min               Engineering range minimum                (default: 0.0) │
+# │  max               Engineering range maximum                    (REQUIRED) │
+# │  unit              Unit of measure                          (default: "V") │
+# │  average           Moving average sample count 1-1000         (default: 5) │
+# │  curve             Scaling shape, see SCALING CURVES       (def: "linear") │
+# │  offset            Output offset added after curve          (default: 0.0) │
+# └────────────────────────────────────────────────────────────────────────────┘
+#
+# ┌─── ANALOG OUTPUT (ao) ─────────────────────────────────────────────────────┐
+# │  min               Engineering range minimum                (default: 0.0) │
+# │  max               Engineering range maximum                    (REQUIRED) │
+# │  unit              Unit of measure                          (default: "V") │
+# │  init              Initial value in engineering units       (default: 0.0) │
+# │  pulse             Watchdog ms, auto-reset to 0 w/o refresh  (def: 0=none) │
+# │  curve             Scaling shape, see SCALING CURVES       (def: "linear") │
+# │  offset            Output offset added after curve          (default: 0.0) │
+# └────────────────────────────────────────────────────────────────────────────┘
+#
+# ┌─── SCALING CURVES (ai/ao) ─────────────────────────────────────────────────┐
+# │                                                                            │
+# │  Formula:  f(n) = a·n³ + b·n² + c·n + offset                               │
+# │  where n = normalized input (0.0 - 1.0)                                    │
+# │  offset is always a separate parameter                                     │
+# │                                                                            │
+# │  Presets (string):         a     b     c      Result                       │
+# │  ─────────────────────────────────────────────────────                     │
+# │  "linear"                 0     0     1       f(n) = n                     │
+# │  "quadratic"              0     1     0       f(n) = n²                    │
+# │  "cubic"                  1     0     0       f(n) = n³                    │
+# │                                                                            │
+# │  Custom (array [a, b, c]):                                                 │
+# │    curve = [0.2, 0.0, 0.8]                    f(n) = 0.2·n³ + 0.8·n        │
+# │                                                                            │
+# │  Offset is independent, works with presets and custom curves:              │
+# │    curve = "linear", offset = 0.05            f(n) = n + 0.05              │
+# │    curve = [0.0, 1.0, 0.0], offset = -0.1     f(n) = n² - 0.1              │
+# │                                                                            │
+# └────────────────────────────────────────────────────────────────────────────┘
+#
+# ┌─── SYSTEM ROLES ───────────────────────────────────────────────────────────┐
+# │  Only examples — real roles are defined in HAL / Control Unit code         │
+# │                                                                            │
+# │  Convention:  FunctionAxisNumber  (axes start at 1)                        │
+# │  Example:     LimitMin3 = lower limit switch of axis 3                     │
+# │                                                                            │
+# │  Safety:      EStop  SafetyGate  DoorLock  EStopReset                      │
+# │  Control:     Start  Stop  Reset  Pause                                    │
+# │  Axes:        LimitMin1..N  LimitMax1..N  Ref1..N  Enable1..N              │
+# │  Pneumatics:  PressureOk  VacuumOk                                         │
+# └────────────────────────────────────────────────────────────────────────────┘
+
+
+[Safety]
+name = "Safety circuits"
+io = [
+    { type="di", role="EStop", pin=1, logic="NC", debounce=100, name="Main E-Stop", sim=true },
+
+    # Two-hand operation - both buttons within 500ms
+    { type="di", role="Start", pin=2, debounce=20, enable_pin=3, enable_state=true, enable_timeout=500, name="Start (left)" },
+    { type="di", pin=3, debounce=20, name="Start Enable (right)" },
+
+    { type="di", role="SafetyGate", pin=4, logic="NC", debounce=50, name="Light curtain" },
+
+    # Stays active during E-Stop
+    { type="do", pin=200, init=true, keep_estop=true, name="Safety relay" },
+    { type="do", pin=201, name="E-Stop indicator" }
+]
+
+[Pneumatics]
+name = "Pneumatics"
+io = [
+    { type="di", role="PressureOk", pin=10, logic="NC", name="Main pressure OK", sim=true },
+    { type="di", pin=11, name="Vacuum OK" },
+
+    { type="ai", pin=64, max=10.0, unit="bar", average=10, sim=6.0, name="Pressure value" },
+
+    # Valve with 500ms watchdog - application must refresh
+    { type="do", pin=100, pulse=500, name="Main valve" },
+    { type="do", pin=101, name="Valve SET" },
+    { type="do", pin=102, name="Valve RESET" }
+]
+
+[Axes]
+name = "Limit switches and homing"
+io = [
+    { type="di", role="LimitMin1", pin=30, logic="NC", name="Limit switch 1-" },
+    { type="di", role="LimitMax1", pin=31, logic="NC", name="Limit switch 1+" },
+    { type="di", role="LimitMin2", pin=32, logic="NC", name="Limit switch 2-" },
+    { type="di", role="LimitMax2", pin=33, logic="NC", name="Limit switch 2+" },
+
+    { type="di", role="Ref1", pin=34, debounce=30, name="Homing sensor axis 1" },
+    { type="di", role="Ref2", pin=35, debounce=30, name="Homing sensor axis 2" }
+]
+
+[Operator_Panel]
+name = "Operator panel"
+io = [
+    { type="di", pin=20, debounce=20, name="START button" },
+    { type="di", pin=21, debounce=20, name="STOP button" },
+    { type="di", pin=22, debounce=20, name="RESET button" },
+    { type="di", pin=23, name="AUTO mode switch" },
+
+    { type="do", pin=106, name="RUN lamp (green)" },
+    { type="do", pin=107, name="ERROR lamp (red)" },
+    { type="do", pin=108, name="WARNING lamp (orange)" },
+    { type="do", pin=109, name="Audible alarm" }
+]
+
+[Diagnostics]
+name = "Diagnostic sensors"
+io = [
+    { type="ai", pin=67, min=-20.0, max=120.0, unit="°C", average=30, sim=22.0, name="Oil temperature" },
+    { type="ai", pin=68, min=0.0, max=30.0, unit="VDC", average=10, sim=24.0, name="24V supply voltage" },
+
+    # Custom curve with offset: sensor has 0.5kg zero-drift
+    { type="ai", pin=69, max=500.0, unit="kg", curve=[0.2, 0.0, 0.8], offset=0.5, name="Load cell" },
+
+    { type="di", pin=40, name="Cabinet door sensor" },
+    { type="di", pin=41, name="Coolant level" },
+    { type="di", pin=42, name="Filter clogged" }
+]

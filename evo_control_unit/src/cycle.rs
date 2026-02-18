@@ -20,11 +20,16 @@
 //! ## Runtime State (T034)
 //! Pre-allocated `[AxisRuntimeState; MAX_AXES]` + global machine/safety state.
 
+use evo_common::consts::MAX_AI;
 use evo_common::control_unit::config::MAX_AXES_LIMIT;
-use evo_common::control_unit::shm::{CuToHalSegment, CuToMqtSegment, CuToReSegment};
 use evo_common::control_unit::state::{MachineState, SafetyState};
+use evo_common::io::registry::IoRegistry;
+use evo_common::shm::io_helpers::BANK_WORDS;
+use evo_common::shm::p2p::ShmError;
+use evo_common::shm::segments::{CuToHalSegment, CuToMqtSegment, CuToReSegment};
 
 use crate::config::LoadedConfig;
+use crate::control::output::AxisControlState;
 use crate::shm::segments::{CuSegments, SegmentError, SegmentThresholds};
 
 // ─── Cycle Statistics (T032) ────────────────────────────────────────
@@ -187,6 +192,12 @@ pub struct RuntimeState {
     /// Cycle statistics.
     pub stats: CycleStats,
 
+    // ── I/O snapshot from HAL feedback ──
+    /// Digital input bank (bit-packed, from HalToCuSegment).
+    pub di_bank: [u64; BANK_WORDS],
+    /// Analog input values (from HalToCuSegment).
+    pub ai_values: [f64; MAX_AI],
+
     // ── Pre-allocated outbound segment buffers ──
     /// CU→HAL output buffer (updated every cycle).
     pub out_hal: CuToHalSegment,
@@ -205,6 +216,8 @@ impl RuntimeState {
             machine_state: MachineState::default(),
             safety_state: SafetyState::default(),
             stats: CycleStats::new(),
+            di_bank: [0u64; BANK_WORDS],
+            ai_values: [0.0f64; MAX_AI],
             // SAFETY: All segment types are repr(C) with numeric fields.
             out_hal: unsafe { core::mem::zeroed() },
             out_mqt: unsafe { core::mem::zeroed() },
@@ -255,13 +268,19 @@ impl From<SegmentError> for CycleError {
     }
 }
 
+impl From<ShmError> for CycleError {
+    fn from(e: ShmError) -> Self {
+        Self::Segment(SegmentError::Shm(e))
+    }
+}
+
 /// Lock all current and future memory pages (prevent page faults in RT loop).
 ///
 /// No-op when the `rt` feature is not enabled.
 #[cfg(feature = "rt")]
 fn rt_mlockall() -> Result<(), CycleError> {
-    use nix::sys::mman::{mlockall, MlockallFlags};
-    mlockall(MlockallFlags::MCL_CURRENT | MlockallFlags::MCL_FUTURE)
+    use nix::sys::mman::{mlockall, MlockAllFlags};
+    mlockall(MlockAllFlags::MCL_CURRENT | MlockAllFlags::MCL_FUTURE)
         .map_err(|e| CycleError::RtSetup(format!("mlockall failed: {e}")))?;
     Ok(())
 }
@@ -366,6 +385,12 @@ pub struct CycleRunner {
     cycle_time_ns: i64,
     /// MQT update interval [cycles].
     mqt_interval: u64,
+    /// I/O registry for role-based pin access (from config).
+    pub io_registry: IoRegistry,
+    /// Per-axis control engine state (PID, DOB, filters).
+    pub control_states: [AxisControlState; MAX_AXES_LIMIT as usize],
+    /// Cycles between RE/RPC late-attach attempts.
+    attach_interval_cycles: u64,
 }
 
 impl CycleRunner {
@@ -385,12 +410,28 @@ impl CycleRunner {
         let cycle_time_ns = config.cu_config.cycle_time_us as i64 * 1000;
         let mqt_interval = config.cu_config.mqt_update_interval as u64;
 
+        // IoRegistry from loaded config.
+        let io_registry = config.io_registry.clone();
+
+        // Pre-allocate per-axis control states.
+        let control_states = core::array::from_fn(|_| AxisControlState::default());
+
+        // Compute attach interval: once per second (cycle_time_us→cycles).
+        let attach_interval_cycles = if config.cu_config.cycle_time_us > 0 {
+            1_000_000u64 / config.cu_config.cycle_time_us as u64
+        } else {
+            1000 // Fallback: 1000 cycles
+        };
+
         Ok(Self {
             config,
             segments,
             state,
             cycle_time_ns,
             mqt_interval,
+            io_registry,
+            control_states,
+            attach_interval_cycles,
         })
     }
 
@@ -504,11 +545,15 @@ impl CycleRunner {
         // Copy HAL feedback into per-axis runtime state.
         let n = self.state.axis_count as usize;
         for i in 0..n {
-            self.state.axes[i].actual_position = hal.axes[i].actual_position;
-            self.state.axes[i].actual_velocity = hal.axes[i].actual_velocity;
-            self.state.axes[i].drive_status = hal.axes[i].drive_status;
-            self.state.axes[i].drive_fault_code = hal.axes[i].fault_code;
+            self.state.axes[i].actual_position = hal.axes[i].position;
+            self.state.axes[i].actual_velocity = hal.axes[i].velocity;
+            self.state.axes[i].drive_status = hal.axes[i].drive_ready;
+            self.state.axes[i].drive_fault_code = hal.axes[i].drive_fault as u16;
         }
+
+        // Copy DI bank and AI values for state machine and safety logic.
+        self.state.di_bank = hal.di_bank;
+        self.state.ai_values = hal.ai_values;
 
         // Read optional RE→CU commands.
         if let Some(ref mut re_reader) = self.segments.re_to_cu {
@@ -524,6 +569,18 @@ impl CycleRunner {
                 let _rpc = rpc_reader.read()?;
                 // TODO (T036+): Process RPC commands → command arbitration.
             }
+        }
+
+        // Periodic late-attach for RE→CU and RPC→CU (once per second, not every cycle).
+        if self.attach_interval_cycles > 0
+            && self.state.stats.cycle_count % self.attach_interval_cycles == 0
+        {
+            let _ = self
+                .segments
+                .try_attach_re(self.config.cu_config.re_stale_threshold);
+            let _ = self
+                .segments
+                .try_attach_rpc(self.config.cu_config.rpc_stale_threshold);
         }
 
         // ═══ PROCESS PHASE ═══
@@ -604,24 +661,26 @@ impl CycleRunner {
             self.state.out_mqt.machine_state = self.state.machine_state as u8;
             self.state.out_mqt.safety_state = self.state.safety_state as u8;
             self.state.out_mqt.axis_count = self.state.axis_count;
+
+            // Aggregate global error flags — full width u32, NOT truncated (FR-043).
+            let mut global_errors: u32 = 0;
             for i in 0..n {
-                let snap = &mut self.state.out_mqt.axes[i];
+                let snap = &mut self.state.out_mqt.axis_status[i];
                 let ax = &self.state.axes[i];
-                snap.power = ax.power_state;
-                snap.motion = ax.motion_state;
-                snap.operational = ax.operational_mode;
-                snap.coupling = ax.coupling_state;
-                snap.gearbox = ax.gearbox_state;
-                snap.loading = ax.loading_state;
-                snap.position = ax.actual_position;
-                snap.velocity = ax.actual_velocity;
-                snap.lag = ax.lag;
-                snap.torque = ax.torque_estimate;
-                snap.error_power = ax.power_errors as u16;
-                snap.error_motion = ax.motion_errors as u16;
-                snap.error_gearbox = ax.gearbox_errors as u8;
-                snap.error_coupling = ax.coupling_errors as u8;
+                snap.axis_state = ax.power_state;
+                snap.motion_state = ax.motion_state;
+                snap.homing_state = ax.homing_state;
+                snap.enable_state = ax.operational_mode;
+                snap.error_code = ax.power_errors as u16;
+                // Accumulate all axis error flags into global error_flags.
+                global_errors |= ax.power_errors;
+                global_errors |= ax.motion_errors;
+                global_errors |= ax.gearbox_errors;
+                global_errors |= ax.coupling_errors;
+                // TODO (T036+): Fill remaining CuAxisStatus fields when
+                // safety state machines and gearbox/coupling are wired.
             }
+            self.state.out_mqt.error_flags = global_errors;
             self.segments.cu_to_mqt.commit(&self.state.out_mqt)?;
         }
 

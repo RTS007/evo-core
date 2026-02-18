@@ -1,0 +1,42 @@
+# ╔══════════════════════════════════════════════════════════════════╗
+# ║  AXIS 08 — Tailstock (Coupled to Z-Axis 3)                       ║
+# ╚══════════════════════════════════════════════════════════════════╝
+
+[axis]
+id = 8
+name = "Tailstock"
+type = "linear"
+
+[kinematics]
+max_velocity = 300.0
+safe_reduced_speed_limit = 30.0
+min_pos = 0.0
+max_pos = 500.0
+in_position_window = 0.1
+
+[control]
+kp = 80.0
+ki = 15.0
+kd = 0.4
+tf = 0.001
+tt = 0.01
+kvff = 0.7
+out_max = 100.0
+lag_error_limit = 1.0
+lag_policy = "Unwanted"
+
+[safe_stop]
+category = "SS2"
+max_decel_safe = 8000.0
+
+[homing]
+method = "TorqueLimit"
+speed = 5.0
+torque_limit = 20.0
+timeout = 30.0
+approach_direction = "Positive"
+
+[coupling]
+master_axis = 3
+ratio = 1.0
+max_sync_error = 0.5

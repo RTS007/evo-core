@@ -1,0 +1,9 @@
+cycle_time_us = 1000
+max_axes = 8
+machine_config_path = "test_8axis.toml"
+io_config_path = "test_io.toml"
+manual_timeout = 30.0
+hal_stale_threshold = 3
+re_stale_threshold = 1000
+rpc_stale_threshold = 1000
+mqt_update_interval = 10
